@@ -5,14 +5,14 @@ import '../widgets/circle_loader.dart';
 
 import '../controllers/game.dart';
 
-class StartScreenPage extends StatefulWidget {
-  const StartScreenPage({Key? key}) : super(key: key);
+class GamePage extends StatefulWidget {
+  const GamePage({Key? key}) : super(key: key);
 
   @override
-  State<StartScreenPage> createState() => _StartScreenPageState();
+  State<GamePage> createState() => _GamePageState();
 }
 
-class _StartScreenPageState extends State<StartScreenPage> {
+class _GamePageState extends State<GamePage> {
   List row1 = "QWERTYUIOP".split("");
   List row2 = "ASDFGHJKL".split("");
   List row3 = "ZXCVBNM".split("");
@@ -97,30 +97,25 @@ class _StartScreenPageState extends State<StartScreenPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: row1.map((e) {
-                        return InkWell(
+                        return GestureDetector(
                           onTap: () {},
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 1),
-                            child: Column(
-                              children: [
-                                Container(
-                                  alignment: Alignment.center,
-                                  height: 40,
-                                  width: 37,
-                                  decoration: BoxDecoration(
-                                      color: Color.fromARGB(255, 253, 221, 220),
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text(
-                                    "$e",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color:
-                                            Color.fromARGB(255, 242, 111, 121),
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 40,
+                              width: 37,
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 253, 221, 220),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(
+                                "$e",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color: Color.fromARGB(255, 242, 111, 121),
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         );
@@ -132,31 +127,26 @@ class _StartScreenPageState extends State<StartScreenPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: row2.map((e) {
-                        return InkWell(
+                        return GestureDetector(
                           onTap: () {},
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Column(
-                              children: [
-                                Container(
-                                  alignment: Alignment.center,
-                                  height: 40,
-                                  width: 37,
-                                  decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                          255, 253, 221, 220),
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text(
-                                    "$e",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color:
-                                            Color.fromARGB(255, 242, 111, 121),
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 40,
+                              width: 37,
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 253, 221, 220),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(
+                                "$e",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color: Color.fromARGB(255, 242, 111, 121),
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         );
@@ -168,31 +158,26 @@ class _StartScreenPageState extends State<StartScreenPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: row3.map((e) {
-                        return InkWell(
+                        return GestureDetector(
                           onTap: () {},
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Column(
-                              children: [
-                                Container(
-                                  alignment: Alignment.center,
-                                  height: 40,
-                                  width: 37,
-                                  decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                          255, 253, 221, 220),
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text(
-                                    "$e",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color:
-                                            Color.fromARGB(255, 242, 111, 121),
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 40,
+                              width: 37,
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 253, 221, 220),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(
+                                "$e",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color: Color.fromARGB(255, 242, 111, 121),
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         );
@@ -204,31 +189,26 @@ class _StartScreenPageState extends State<StartScreenPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: row4.map((e) {
-                        return InkWell(
+                        return GestureDetector(
                           onTap: () {},
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Column(
-                              children: [
-                                Container(
-                                  alignment: Alignment.center,
-                                  height: 37,
-                                  width: 150,
-                                  decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                          255, 253, 221, 220),
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text(
-                                    "$e",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color:
-                                            Color.fromARGB(255, 242, 111, 121),
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 37,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 253, 221, 220),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(
+                                "$e",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color: Color.fromARGB(255, 242, 111, 121),
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         );

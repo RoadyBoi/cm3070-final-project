@@ -55,20 +55,27 @@ class _HomePageState extends State<HomePage> {
               Align(
                 alignment: Alignment.center,
                 child: ElevatedButton(
-                  onPressed: tutorialPressed,
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pushReplacementNamed('/GameRoomScreen');
+                  },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStatePropertyAll<Color>(
-                        Color.fromARGB(255, 145, 162, 113)),
-                    shape: MaterialStatePropertyAll<ContinuousRectangleBorder>(ContinuousRectangleBorder(borderRadius: BorderRadius.circular(15),))  
-                  ),
+                      backgroundColor: MaterialStatePropertyAll<Color>(
+                          Color.fromARGB(255, 145, 162, 113)),
+                      shape:
+                          MaterialStatePropertyAll<ContinuousRectangleBorder>(
+                              ContinuousRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ))),
                   child: Padding(
                     padding: EdgeInsets.all(5),
-                  child: Text(
-                    "START",
-                    style: Theme.of(context).textTheme.headline1?.copyWith(
-                        fontSize: width * 0.12,
-                        fontWeight: FontWeight.w500, color: Colors.white),
-                  ),
+                    child: Text(
+                      "START",
+                      style: Theme.of(context).textTheme.headline1?.copyWith(
+                          fontSize: width * 0.12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white),
+                    ),
                   ),
                 ),
               ),
