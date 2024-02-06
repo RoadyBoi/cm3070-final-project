@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/audio.dart';
-import '../widgets/circle_loader.dart';
-
-import '../controllers/game.dart';
 
 class FinalPage extends StatefulWidget {
   const FinalPage({Key? key}) : super(key: key);
