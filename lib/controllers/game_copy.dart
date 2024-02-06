@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -158,7 +159,7 @@ class LainGame extends ChangeNotifier {
 
   // one-time use only (command-line dart)
   void generateIndexedJson() {
-    File jsonSourceFile = File("../../assets/words_dictionary.json");
+    File jsonSourceFile = File("assets/words_dictionary.json");
     Map wordMap = json.decode(jsonSourceFile.readAsStringSync());
     String currentWord;
 
@@ -176,14 +177,15 @@ class LainGame extends ChangeNotifier {
     });
 
     // save the indexed word list
-    File jsonResultFile = File("../../assets/words_dictionary_index.json");
+    File jsonResultFile = File("assets/words_dictionary_index.json");
     jsonResultFile.writeAsStringSync(json.encode(indexedWordMapDictionary));
   }
 
   // To be called on app start or game start for refreshing of list
-  void populateIndexedWordMap() {
-    indexedWordMapDictionary = json.decode(
-        File("../../assets/words_dictionary_index.json").readAsStringSync());
+  Future<void> populateIndexedWordMap() async {
+    final jsonString =
+        await rootBundle.loadString("assets/words_dictionary_index.json");
+    indexedWordMapDictionary = json.decode(jsonString);
   }
 
   Future<void> readHighScore() async {

@@ -23,7 +23,8 @@ class _SequenceAppState extends State<SequenceApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      Provider.of<LainGame>(context, listen: false).populateIndexedWordMap();
+      await Provider.of<LainGame>(context, listen: false)
+          .populateIndexedWordMap();
       await Provider.of<LainGame>(context, listen: false).readHighScore();
     } else {
       await Provider.of<LainGame>(context, listen: false).saveHighScore();
