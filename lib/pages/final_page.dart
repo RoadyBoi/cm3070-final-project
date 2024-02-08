@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sequence/controllers/game_copy.dart';
 
-class FinalPage extends StatefulWidget {
-  const FinalPage({Key? key}) : super(key: key);
+class FinalPage extends StatelessWidget {
+  FinalPage({super.key});
 
   @override
-  State<FinalPage> createState() => _FinalPageState();
-}
-
-class _FinalPageState extends State<FinalPage> {
   Widget build(BuildContext context) {
+    Provider.of<LainGame>(context, listen: false).saveHighScore();
+
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
@@ -27,7 +27,7 @@ class _FinalPageState extends State<FinalPage> {
               Align(
                 alignment: Alignment.center,
                 child: Text(
-                  "6",
+                  "${Provider.of<LainGame>(context, listen: false).currentScore}",
                   style: Theme.of(context).textTheme.headline1?.copyWith(
                       fontWeight: FontWeight.w400,
                       fontSize: width * 0.3,
@@ -49,7 +49,7 @@ class _FinalPageState extends State<FinalPage> {
                           ),
                     ),
                     Text(
-                      "1234 ",
+                      "${Provider.of<LainGame>(context, listen: false).highScore}",
                       style: Theme.of(context).textTheme.headline1?.copyWith(
                             fontWeight: FontWeight.w400,
                             fontSize: width * 0.07,
@@ -62,7 +62,11 @@ class _FinalPageState extends State<FinalPage> {
               Align(
                 alignment: Alignment.center,
                 child: ElevatedButton(
-                  onPressed: tutorialPressed,
+                  onPressed: () {
+                    Provider.of<LainGame>(context, listen: false).resetGame();
+                    Navigator.of(context)
+                        .pushReplacementNamed('/GameRoomScreen');
+                  },
                   style: ButtonStyle(
                       backgroundColor: MaterialStatePropertyAll<Color>(
                           Color.fromARGB(255, 145, 162, 113)),
@@ -89,6 +93,4 @@ class _FinalPageState extends State<FinalPage> {
       ),
     );
   }
-
-  void tutorialPressed() {}
 }

@@ -13,6 +13,7 @@ class LainGame extends ChangeNotifier {
       List.generate(10, (index) => List.generate(8, (index) => ""));
   int currentGameRowIndex = 9;
   int currentRandomGameRowLength = 0;
+  int currentActiveLetterPositionPointer = 1;
   int currentScore = 0;
   List<String> playedWords = [];
   int currentTick = 0; //0-9 seconds
@@ -45,56 +46,81 @@ class LainGame extends ChangeNotifier {
     for (int i = 1; i < currentRandomGameRowLength; i++) {
       currentGameGrid[9][i] = " ";
     }
+    currentActiveLetterPositionPointer = 1;
     currentGameRowIndex = 9;
     notifyListeners();
   }
 
   void generateNextGameRow(String lastGameWordLetter) {
-    currentGameGrid[9][0] = lastGameWordLetter;
+    currentGameGrid.removeAt(0);
+    notifyListeners();
+    List<String> newRow = [lastGameWordLetter];
     calculateRandomGameRowLength();
-    for (int i = 1; i < currentRandomGameRowLength; i++) {
-      currentGameGrid[9][i] = " ";
+    for (int i = 1; i < 8; i++) {
+      if (i < currentRandomGameRowLength)
+        newRow.add(" ");
+      else
+        newRow.add("");
     }
+    currentGameGrid.add(newRow);
     currentGameRowIndex = 9;
-    resetTick();
+    currentActiveLetterPositionPointer = 1;
+    currentTick = 0; //reset tick
     notifyListeners();
   }
 
+  List<String> flattenedGameGrid() {
+    return [for (List<String> row in currentGameGrid) ...row];
+  }
+
+  void addCurrentValidWordtoPlayedWords() {
+    String playedWord =
+        currentGameGrid[currentGameRowIndex].join().trim().toLowerCase();
+    playedWords.add(playedWord);
+  }
+
   void userInput(String keyInput) {
-    // if delete input, delete last letter from gamerow
-    if (keyInput == "DELETE" &&
-        currentGameGrid[currentGameRowIndex].length > 1) {
-      currentGameGrid[currentGameRowIndex].removeLast();
+    // if delete input (1), delete last letter from gamerow
+    if (keyInput == "1") {
+      // if word is filled (pointer = length), put pointer at length - 1
+      if (currentActiveLetterPositionPointer == currentGameRowIndex)
+        currentActiveLetterPositionPointer -= 1;
+
+      // go back one space, but not change first letter
+      if (currentActiveLetterPositionPointer >= 2)
+        currentActiveLetterPositionPointer -= 1;
+
+      // delete word
+      currentGameGrid[currentGameRowIndex][currentActiveLetterPositionPointer] =
+          " ";
+
       notifyListeners();
-      // if filling word, keep adding to game row
-    } else if (currentGameGrid[currentGameRowIndex].length <
-        currentRandomGameRowLength) {
-      currentGameGrid[currentGameRowIndex].add(keyInput);
+      return;
+      // add tapped letter to word if not filled
+    } else if (keyInput != "1" &&
+        currentActiveLetterPositionPointer < currentRandomGameRowLength) {
+      currentGameGrid[currentGameRowIndex][currentActiveLetterPositionPointer] =
+          keyInput;
+      currentActiveLetterPositionPointer += 1;
       notifyListeners();
     }
+    print(
+        "currentActiveLetterPositionPointer: $currentActiveLetterPositionPointer");
+    print("currentRandomGameRowLength: $currentRandomGameRowLength");
+
     // if game row is filled, validate word
-    if (currentGameGrid[currentGameRowIndex].length ==
-        currentRandomGameRowLength) {
+    if (currentActiveLetterPositionPointer == currentRandomGameRowLength) {
       if (validateWord(currentGameGrid[currentGameRowIndex])) {
         // if valid word, add to score and played words
-        String playedWord =
-            currentGameGrid[currentGameRowIndex].join().trim().toLowerCase();
-        currentScore += playedWord.length;
-        playedWords.add(playedWord);
+        currentScore += currentRandomGameRowLength;
         // if high score beaten, update high score
         if (currentScore > highScore) {
           highScore = currentScore;
         }
+        addCurrentValidWordtoPlayedWords();
         // generate next game row
-        generateNextGameRow(currentGameGrid[currentGameRowIndex].last);
-      } else {
-        Fluttertoast.showToast(
-            msg: "Invalid word",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.TOP,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-            fontSize: 16.0);
+        generateNextGameRow(currentGameGrid[currentGameRowIndex]
+            [currentRandomGameRowLength - 1]);
       }
     }
     // else if (keyInput.isNotEmpty) {
@@ -106,29 +132,53 @@ class LainGame extends ChangeNotifier {
 
   bool validateWord(List<String> wordArray) {
     // first letter to be used as index
-    String firstLetter = wordArray[0];
     String currentPlayedWord = wordArray.join().trim().toLowerCase();
+    String firstLetter = currentPlayedWord[0];
+    print("Validating: $currentPlayedWord");
 
-    return (!playedWords.contains(currentPlayedWord)) &&
-        (indexedWordMapDictionary[firstLetter]?.contains(currentPlayedWord) ??
-            false);
+    bool isNotAlreadyPlayed = !playedWords.contains(currentPlayedWord);
+    print("isAlreadyPlayed: $isNotAlreadyPlayed");
+
+    bool isInDictionary =
+        indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
+    print("isInDictionary: $isInDictionary");
+
+    if (!isNotAlreadyPlayed)
+      Fluttertoast.showToast(
+          msg: "Word played already",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    // since word played before is definitely in dictionary,
+    // safe to add prompt for invalid word together here without additional condition
+    if (!isInDictionary)
+      Fluttertoast.showToast(
+          msg: "Invalid word",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+
+    return isNotAlreadyPlayed && isInDictionary;
   }
 
   int incrementTick() {
     currentTick += 1;
+    // shift currentgamerow up
+    // currentGameGrid[currentGameRowIndex - 1] =
+    //     currentGameGrid[currentGameRowIndex];
+    // currentGameGrid[currentGameRowIndex] = List.generate(8, (index) => "");
+    currentGameRowIndex -= 1;
     // remove first row
     currentGameGrid.removeAt(0);
-    // add a row to the last
+    // add a filler row to the last
     currentGameGrid.add(List.generate(8, (index) => ""));
-    // move current game row up
-    currentGameRowIndex -= 1;
     // ticker limit logic in UI file
-    // if (currentTick > 9)
-    return incrementTick();
-  }
-
-  void resetTick() {
-    currentTick = 0;
+    notifyListeners();
+    return currentTick;
   }
 
   void resetGame() {
@@ -139,6 +189,7 @@ class LainGame extends ChangeNotifier {
     currentScore = 0;
     playedWords = [];
     currentTick = 0; //0-9 seconds
+    generateFirstGameRow();
   }
 
   // static List<String> fillGameArray(List<String> gArray, int gameWordLength) {

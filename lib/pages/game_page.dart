@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:sequence/controllers/game_copy.dart';
 
@@ -15,27 +16,36 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   List row1 = "QWERTYUIOP".split("");
   List row2 = "ASDFGHJKL".split("");
   List row3 = "ZXCVBNM".split("");
-  List row4 = ["DELETE"];
+  List row4 = ["1"];
   late final Timer tickTimer;
+  late List<Widget> gameCards;
 
-  // @override
-  // void initState() {
-  //   tickTimer = Timer(Duration(seconds: 1), () {
-  //     int nowTick =
-  //         Provider.of<LainGame>(context, listen: false).incrementTick();
-  //     if (nowTick > 9) {
-  //       Navigator.of(context).pushReplacementNamed("/FinalPageScreen");
-  //       //Provider.of<LainGame>(context, listen: false).resetGame();
-  //     }
-  //   });
-  //   super.initState();
-  // }
+  @override
+  void initState() {
+    tickTimer = Timer.periodic(Duration(seconds: 1), (thisTimer) {
+      int nowTick =
+          Provider.of<LainGame>(context, listen: false).incrementTick();
+      setState(() {});
+      if (nowTick > 9) {
+        Fluttertoast.showToast(
+            msg: "Time up",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.TOP,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        thisTimer.cancel();
+        Navigator.of(context).pushReplacementNamed("/FinalPageScreen");
+      }
+    });
+    super.initState();
+  }
 
-  // @override
-  // void dispose() {
-  //   tickTimer.cancel();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    tickTimer.cancel();
+    super.dispose();
+  }
 
   Widget fillerRowCard() => Container(
         decoration: BoxDecoration(
@@ -59,7 +69,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(8)),
         child: Center(
           child: Text(
-            letter,
+            letter.toUpperCase(),
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 24, color: Colors.white, fontWeight: FontWeight.w600),
@@ -80,32 +90,15 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                   child: Row(
                     children: [
-                      Text("SCORE: ",
+                      Text("SCORE ",
                           style: Theme.of(context)
                               .textTheme
                               .headline1
                               ?.copyWith(
-                                  fontSize: 25,
+                                  fontSize: 22,
                                   color: Color.fromARGB(255, 242, 111, 121),
                                   fontWeight: FontWeight.w800)),
-                      Text("6",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline1
-                              ?.copyWith(
-                                  fontSize: 27,
-                                  color: Color.fromARGB(255, 59, 65, 50),
-                                  fontWeight: FontWeight.w600)),
-                      Spacer(),
-                      Text("HIGH SCORE: ",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline1
-                              ?.copyWith(
-                                  fontSize: 20,
-                                  color: Color.fromARGB(255, 242, 111, 121),
-                                  fontWeight: FontWeight.w800)),
-                      Text("600",
+                      Text("${lainGameState.currentScore}",
                           style: Theme.of(context)
                               .textTheme
                               .headline1
@@ -113,19 +106,39 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                   fontSize: 22,
                                   color: Color.fromARGB(255, 59, 65, 50),
                                   fontWeight: FontWeight.w600)),
+                      Spacer(),
+                      Text("HIGH SCORE ",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline1
+                              ?.copyWith(
+                                  fontSize: 16,
+                                  color: Color.fromARGB(255, 242, 111, 121),
+                                  fontWeight: FontWeight.w800)),
+                      Text("${lainGameState.highScore}",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline1
+                              ?.copyWith(
+                                  fontSize: 16,
+                                  color: Color.fromARGB(255, 59, 65, 50),
+                                  fontWeight: FontWeight.w600)),
                     ],
                   )),
               GridView.count(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                crossAxisSpacing: 3, // Add vertical spacing between boxes
-                mainAxisSpacing: 5,
-                crossAxisCount: 8,
-                shrinkWrap: true,
-                childAspectRatio: 0.99,
-                children: List.generate(80, (index) {
-                  return gameRowCard("t");
-                }),
-              ),
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  crossAxisSpacing: 3, // Add vertical spacing between boxes
+                  mainAxisSpacing: 5,
+                  crossAxisCount: 8,
+                  shrinkWrap: true,
+                  childAspectRatio: 0.99,
+                  children:
+                      lainGameState.flattenedGameGrid().map<Widget>((value) {
+                    if (value == "")
+                      return fillerRowCard();
+                    else
+                      return gameRowCard(value);
+                  }).toList()),
             ],
           ),
         ),
@@ -140,9 +153,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: row1.map((e) {
+                    children: row1.map((letter) {
                       return GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          lainGameState.userInput(letter);
+                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 1),
                           child: Container(
@@ -153,7 +168,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                 color: Color.fromARGB(255, 253, 221, 220),
                                 borderRadius: BorderRadius.circular(8)),
                             child: Text(
-                              "$e",
+                              "$letter",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 25,
@@ -170,9 +185,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: row2.map((e) {
+                    children: row2.map((letter) {
                       return GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          lainGameState.userInput(letter);
+                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: Container(
@@ -183,7 +200,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                 color: const Color.fromARGB(255, 253, 221, 220),
                                 borderRadius: BorderRadius.circular(8)),
                             child: Text(
-                              "$e",
+                              "$letter",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 25,
@@ -200,9 +217,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: row3.map((e) {
+                    children: row3.map((letter) {
                       return GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          lainGameState.userInput(letter);
+                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: Container(
@@ -213,7 +232,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                 color: const Color.fromARGB(255, 253, 221, 220),
                                 borderRadius: BorderRadius.circular(8)),
                             child: Text(
-                              "$e",
+                              "$letter",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 25,
@@ -230,9 +249,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: row4.map((e) {
+                    children: row4.map((letter) {
                       return GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          lainGameState.userInput(letter);
+                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: Container(
@@ -243,7 +264,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                 color: const Color.fromARGB(255, 253, 221, 220),
                                 borderRadius: BorderRadius.circular(8)),
                             child: Text(
-                              "$e",
+                              "${letter == "1" ? "Delete" : letter}",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 25,
