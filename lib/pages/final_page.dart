@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sequence/controllers/game_copy.dart';
+import '../controllers/game.dart';
 
 class FinalPage extends StatelessWidget {
   FinalPage({super.key});

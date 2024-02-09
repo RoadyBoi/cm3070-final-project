@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import '../controllers/audio.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    AudioController.playGameStartSound();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;

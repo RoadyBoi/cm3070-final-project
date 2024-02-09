@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sequence/controllers/game_copy.dart';
+import 'controllers/game.dart';
 import '../constants/settings.dart';
 import '../constants/theme.dart';
 import '../route_generator.dart';
@@ -23,11 +23,8 @@ class _SequenceAppState extends State<SequenceApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      await Provider.of<LainGame>(context, listen: false)
-          .populateIndexedWordMap();
-      await Provider.of<LainGame>(context, listen: false).readHighScore();
-    } else {
-      await Provider.of<LainGame>(context, listen: false).saveHighScore();
+      Provider.of<LainGame>(context, listen: false).populateIndexedWordMap();
+      Provider.of<LainGame>(context, listen: false).readHighScore();
     }
     super.didChangeAppLifecycleState(state);
   }

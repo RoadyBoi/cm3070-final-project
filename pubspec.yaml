@@ -21,7 +21,6 @@ dependencies:
 
   # controllers
   audioplayers: ^5.2.1
-  firebase_core: ^2.7.1
   fluttertoast: ^8.2.4
   shared_preferences: ^2.2.2
 

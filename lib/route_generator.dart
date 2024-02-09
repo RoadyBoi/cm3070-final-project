@@ -1,8 +1,7 @@
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter/material.dart';
-import 'package:sequence/pages/final_page.dart';
+import '../pages/final_page.dart';
 import '../pages/splash_screen.dart';
-import '../test_page.dart';
 import '../pages/home_page.dart';
 import '../pages/game_page.dart';
 
@@ -31,8 +30,6 @@ class RouteGenerator {
         return _defaultTransition(SplashScreenPage());
       case "/StartScreen":
         return _defaultTransition(HomePage());
-      case "/TestPageScreen":
-        return _defaultTransition(TestPage());
       case "/GameRoomScreen":
         return _defaultTransition(GamePage());
       case "/FinalPageScreen":

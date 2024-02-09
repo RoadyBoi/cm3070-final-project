@@ -1,367 +1,298 @@
 import 'dart:math';
-
-import 'package:flutter/material.dart';
-import 'package:playing_cards/playing_cards.dart';
-import '../controllers/audio.dart';
-
+import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../constants/helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
-class Game extends ChangeNotifier{
-  Random randomizer = Random();
-  final PlayingCard cornerCard = PlayingCard(Suit.joker, CardValue.joker_1);
+// cache (SharedPrefs) key-value pair for high score
+const String highScorePrefsKey = "LAINHighScorePrefsKey";
+// lowercase letter list
+final List<String> letterList =
+    List.generate(26, (index) => String.fromCharCode(index + 97));
 
-  List<List<PlayingCard>> grid = [];
-  List<PlayingCard> grid1D = [];
-  List<String?> counterGrid = [];
+/// LainGame class uses provider architecture for state management
+/// to implement the game logic. LainGame is ChangeNotifier class
+/// that is provided to the root widget of the app and changes to
+/// LainGame class members update the Consumer widgets that are listening
+/// using the function notifyListeners()
+class LainGame extends ChangeNotifier {
+  // game grid (8 x 10)
+  List<List<String>> currentGameGrid =
+      List.generate(10, (index) => List.generate(8, (index) => ""));
+  // pointer in the grid for the active game row
+  int currentGameRowPointer = 9;
+  // current word length (3 - maxGameWordLength)
+  int currentRandomGameRowLength = 0;
+  // according to difficulty level (5 = casual, 6 = challenging, 8 = complex)
+  int maxGameWordLength = 8;
+  // game word current letter pointer
+  int currentActiveLetterPositionPointer = 1;
+  // score
+  int currentScore = 0;
+  // list of played words
+  List<String> playedWords = [];
+  // ticker (10 seconds)
+  int currentTick = 0; //0-9
+  // dictionary filled from json map of words
+  Map indexedWordMapDictionary = {};
+  // high score
+  int highScore = 0;
 
-  List<PlayingCard> gameRoomDeck = [];
-  List<PlayingCard> gameRoomPlayedCards = [];
-
-  PlayingCard? selectedCard;
-  int? selectedCardHandIndex = 0;
-
-  String player1Name = "";
-  String player2Name = "";
-  List<PlayingCard> player1Hand = [];
-  List<PlayingCard> player2Hand = [];
-
-  bool player1Turn = true; // player 2 turn = false
-  bool showingCards = false;
-  bool currentPlayerPlayed = false;
-
-  String? gameWonBy;
-
-  Game(){
-    if (cardValueGrid.length != 10)
-      throw Error.safeToString(
-        "[Card Grid] - Card Value Grid: ${cardValueGrid.length} rows",);
-
-    if (suitGrid.length != 10)
-      throw Error.safeToString(
-        "[Card Grid] - Suit Grid: ${cardValueGrid.length} rows",);
-
-    for (int i = 0; i < 10; i++) {
-      grid.add(List<PlayingCard>.generate(10, (index) => PlayingCard(Suit.spades, CardValue.jack)));
-      for (int j = 0; j < 10; j++)
-        grid[i][j] = PlayingCard(suitGrid[i][j], cardValueGrid[i][j]);
-    }
-
-    grid1D = grid.expand((element) => element).toList();
-    counterGrid = List.generate(grid1D.length, (index) => null);
-
-    gameRoomDeck.addAll(standardFiftyTwoCardDeck());
-    gameRoomDeck.addAll(standardFiftyTwoCardDeck());
-    fillHandsFirst();
+  LainGame() {
+    populateIndexedWordMap();
+    readHighScore();
+    generateFirstGameRow();
   }
 
-  final List<List<CardValue>> cardValueGrid = [
-    [
-      CardValue.joker_1, CardValue.two, CardValue.three, CardValue.four,
-      CardValue.five, CardValue.six, CardValue.seven, CardValue.eight,
-      CardValue.nine, CardValue.joker_1
-    ],
-    [
-      CardValue.six, CardValue.five, CardValue.four, CardValue.three,
-      CardValue.two, CardValue.ace, CardValue.king, CardValue.queen,
-      CardValue.ten, CardValue.ten
-    ],
-    [
-      CardValue.seven, CardValue.ace, CardValue.two, CardValue.three,
-      CardValue.four, CardValue.five, CardValue.six, CardValue.seven,
-      CardValue.nine, CardValue.queen
-    ],
-    [
-      CardValue.eight, CardValue.king, CardValue.six, CardValue.five,
-      CardValue.four, CardValue.three, CardValue.two, CardValue.eight,
-      CardValue.eight, CardValue.king,
-    ],
-    [
-      CardValue.nine, CardValue.queen, CardValue.seven, CardValue.six,
-      CardValue.five, CardValue.four, CardValue.ace, CardValue.nine,
-      CardValue.seven, CardValue.ace
-    ],
-    [
-      CardValue.ten, CardValue.ten, CardValue.eight, CardValue.seven,
-      CardValue.two, CardValue.three, CardValue.king, CardValue.ten,
-      CardValue.six, CardValue.two
-    ],
-    [
-      CardValue.queen, CardValue.nine, CardValue.nine, CardValue.eight,
-      CardValue.nine, CardValue.ten, CardValue.queen, CardValue.queen,
-      CardValue.five, CardValue.three
-    ],
-    [
-      CardValue.king, CardValue.eight, CardValue.ten, CardValue.queen,
-      CardValue.king, CardValue.ace, CardValue.ace, CardValue.king,
-      CardValue.four, CardValue.four
-    ],
-    [
-      CardValue.ace, CardValue.seven, CardValue.six, CardValue.five,
-      CardValue.four, CardValue.three, CardValue.two, CardValue.two,
-      CardValue.three, CardValue.five
-    ],
-    [
-      CardValue.joker_1, CardValue.ace, CardValue.king, CardValue.queen,
-      CardValue.ten, CardValue.nine, CardValue.eight, CardValue.seven,
-      CardValue.six, CardValue.joker_1
-    ]
-  ];
+  // get random letter from letter list for first game row
+  String getFirstLetter() => letterList[Random().nextInt(26)];
 
-  final List<List<Suit>> suitGrid = [
-    [
-      Suit.joker, Suit.spades, Suit.spades, Suit.spades, Suit.spades,
-      Suit.spades, Suit.spades, Suit.spades, Suit.spades, Suit.joker
-    ],
-    [
-      Suit.clubs, Suit.clubs, Suit.clubs, Suit.clubs, Suit.clubs,
-      Suit.hearts, Suit.hearts, Suit.hearts, Suit.hearts, Suit.spades
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.diamonds, Suit.diamonds, Suit.diamonds,
-      Suit.diamonds, Suit.diamonds, Suit.diamonds, Suit.hearts, Suit.spades
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.clubs, Suit.clubs, Suit.clubs,
-      Suit.clubs, Suit.clubs, Suit.diamonds, Suit.hearts, Suit.spades
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.clubs, Suit.hearts, Suit.hearts,
-      Suit.hearts, Suit.hearts, Suit.diamonds, Suit.hearts, Suit.spades
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.clubs, Suit.hearts, Suit.hearts,
-      Suit.hearts, Suit.hearts, Suit.diamonds, Suit.hearts, Suit.diamonds
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.clubs, Suit.hearts, Suit.hearts,
-      Suit.hearts, Suit.hearts, Suit.diamonds, Suit.hearts, Suit.diamonds,
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.clubs, Suit.clubs, Suit.clubs,
-      Suit.clubs, Suit.diamonds, Suit.diamonds, Suit.hearts, Suit.diamonds,
-    ],
-    [
-      Suit.clubs, Suit.spades, Suit.spades, Suit.spades, Suit.spades,
-      Suit.spades, Suit.spades, Suit.hearts, Suit.hearts, Suit.diamonds
-    ],
-    [
-      Suit.joker, Suit.diamonds, Suit.diamonds, Suit.diamonds, Suit.diamonds,
-      Suit.diamonds, Suit.diamonds, Suit.diamonds, Suit.diamonds, Suit.joker
-    ]
-  ];
-
-  void setPlayerNames(String player1, String player2){ player1Name = player1; player2Name = player2; }
-
-  void fillHandsFirst(){
-    for (int i = 0; i < 6; i ++){
-      player1Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
-      player2Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
-    }
+  // calculate random length of the word to play next
+  void calculateRandomGameRowLength() {
+    currentRandomGameRowLength =
+        3 + Random().nextInt((maxGameWordLength + 1) - 3);
   }
 
-  void showHand(){ if (!showingCards){ showingCards = true; notifyListeners(); } }
+  // set game difficulty
+  // difficulty level (5 = casual, 6 = challenging, 8 = complex)
+  void setGameDifficulty(int difficultyLevel) {
+    maxGameWordLength = difficultyLevel;
+  }
 
-  void setSelectedCard(PlayingCard pickedCard, int handIndex){
-    Helper.debugPrint("Selecting ${'${pickedCard.suit} ${pickedCard.value}'}");
-    selectedCard = pickedCard;
-    selectedCardHandIndex = handIndex;
+  // create first game row with random first letter and random length
+  // first row will be the last row in the grid [9] so that rows
+  // move bottom to top
+  void generateFirstGameRow() {
+    currentGameGrid[9][0] = getFirstLetter();
+    calculateRandomGameRowLength();
+    // keeping spaces " " indicates game row box, "" indicates filler box
+    for (int i = 1; i < currentRandomGameRowLength; i++) {
+      currentGameGrid[9][i] = " ";
+    }
+    // set the active letter pointer to the second letter
+    currentActiveLetterPositionPointer = 1;
+    // set current active game row to the last
+    currentGameRowPointer = 9;
+    // send update to UI (Consumers)
     notifyListeners();
   }
 
-  void unSelectCard(){ selectedCard = null; selectedCardHandIndex = null; notifyListeners(); }
-
-  void fillHandAfterTurn(){
-    if (player1Turn)
-      player1Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
-    else
-      player2Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
-  }
-
-  bool compareCards(PlayingCard? card1, PlayingCard? card2)
-    => card1?.suit == card2?.suit && card1?.value == card2?.value;
-
-  void placeCounter(int gridIndex){
-    counterGrid[gridIndex] = player1Turn ? "red" : "blue";
-  }
-
-  bool oneEyedJackSelected()
-    => compareCards(selectedCard, PlayingCard(Suit.spades, CardValue.jack)) || compareCards(selectedCard, PlayingCard(Suit.hearts, CardValue.jack));
-
-  bool isOtherPlayedGridCard(int gridIndex)
-    => (player1Turn && counterGrid[gridIndex] == "blue") || (!player1Turn && counterGrid[gridIndex] == "red");
-
-  bool twoEyedJackSelected()
-    => compareCards(selectedCard, PlayingCard(Suit.diamonds, CardValue.jack)) || compareCards(selectedCard, PlayingCard(Suit.clubs, CardValue.jack));
-
-  bool isGridCardPlayed(int gridIndex)
-    => counterGrid[gridIndex] != null;
-
-  bool isWildCardSelected()
-    => oneEyedJackSelected() || twoEyedJackSelected();
-
-  bool isCornerCardOnGrid(int gridIndex)
-    => compareCards(cornerCard, grid1D[gridIndex]);
-
-  bool canCallDeadCard(PlayingCard card) {
-    int countPlayed = 0;
-    for (int i = 0; i < grid1D.length; i++) {
-      if (compareCards(card, grid1D[i]) && counterGrid[i] != null)
-        if (++countPlayed == 2) return true;
+  // create next active game row
+  void generateNextGameRow(String lastGameWordLetter) {
+    // remove the top row of the grid
+    currentGameGrid.removeAt(0);
+    // create new row as game row with first letter as last game word letter
+    List<String> newRow = [lastGameWordLetter];
+    // calculate random length of new game row
+    calculateRandomGameRowLength();
+    // add game boxes and filler boxes to the game row
+    for (int i = 1; i < 8; i++) {
+      if (i < currentRandomGameRowLength)
+        newRow.add(" ");
+      else
+        newRow.add("");
     }
-    return false;
+    // add the created game row to end of grid
+    currentGameGrid.add(newRow);
+    // set current active game row to the last
+    currentGameRowPointer = 9;
+    // set the active letter pointer to the second letter
+    currentActiveLetterPositionPointer = 1;
+    // reset tick
+    currentTick = 0;
+    // send update to UI (Consumers)
+    notifyListeners();
   }
 
-  void callDeadCard(int? handIndex){
-    AudioController.playDeadCardSound();
-    if (handIndex != null){
-      if (player1Turn) {
-        player1Hand.removeAt(handIndex);
-        player1Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
+  // flatten the 2d game grid for GridView widget's children
+  List<String> flattenedGameGrid() =>
+      [for (List<String> row in currentGameGrid) ...row];
+
+  // add the last played valid word to played words for current game
+  void addCurrentValidWordtoPlayedWords() {
+    String playedWord =
+        currentGameGrid[currentGameRowPointer].join().trim().toLowerCase();
+    playedWords.add(playedWord);
+  }
+
+  // user game input handler
+  void userInput(String keyInput) {
+    // if input is delete flag ("1"), delete last letter from game row
+    if (keyInput == "1") {
+      // limit deletion up to second letter
+      if (currentActiveLetterPositionPointer >= 2) {
+        currentActiveLetterPositionPointer -= 1;
+        currentGameGrid[currentGameRowPointer]
+            [currentActiveLetterPositionPointer] = " ";
       }
-      else{
-        player2Hand.removeAt(handIndex);
-        player2Hand.add(gameRoomDeck.removeAt(randomizer.nextInt(gameRoomDeck.length)));
-      }
+      // send update to UI (Consumers)
+      notifyListeners();
+      return;
+      // add tapped letter to word if not filled
+    } else if (keyInput != "1" &&
+        currentActiveLetterPositionPointer < currentRandomGameRowLength) {
+      currentGameGrid[currentGameRowPointer]
+          [currentActiveLetterPositionPointer] = keyInput;
+      // move active letter pointer to the next position
+      currentActiveLetterPositionPointer += 1;
+      // send update to UI (Consumers)
       notifyListeners();
     }
+    Helper.debugPrint(
+        "currentActiveLetterPositionPointer: $currentActiveLetterPositionPointer");
+    Helper.debugPrint(
+        "currentRandomGameRowLength: $currentRandomGameRowLength");
+    Helper.debugPrint(
+        "currentGameRow: ${currentGameGrid[currentGameRowPointer]}");
+
+    // if game row is filled, validate word
+    if (currentActiveLetterPositionPointer == currentRandomGameRowLength) {
+      if (validateWord(currentGameGrid[currentGameRowPointer])) {
+        // if valid word, add to score and played words
+        currentScore += currentRandomGameRowLength;
+        // if high score beaten, update high score
+        if (currentScore > highScore) {
+          highScore = currentScore;
+        }
+        addCurrentValidWordtoPlayedWords();
+        // generate next game row
+        generateNextGameRow(currentGameGrid[currentGameRowPointer]
+            [currentRandomGameRowLength - 1]);
+      }
+    }
+    // else if (keyInput.isNotEmpty) {
+    //    keyInput.trim().toLowerCase()[0];
+    // } else {
+    //   return null;
+    // }
   }
 
-  void onEndCurrentTurn(){
-    fillHandAfterTurn();
-    player1Turn = !player1Turn;
-    showingCards = false;
-    currentPlayerPlayed = false;
+  bool validateWord(List<String> wordArray) {
+    // first letter to be used as index
+    String currentPlayedWord = wordArray.join().trim().toLowerCase();
+    String firstLetter = currentPlayedWord[0];
+    Helper.debugPrint("Validating: $currentPlayedWord");
+
+    // check if word is already played
+    bool isNotAlreadyPlayed = !playedWords.contains(currentPlayedWord);
+    Helper.debugPrint("isAlreadyPlayed: $isNotAlreadyPlayed");
+
+    // check if word is valid (in the dictionary)
+    bool isInDictionary =
+        indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
+    Helper.debugPrint("isInDictionary: $isInDictionary");
+
+    Fluttertoast.cancel();
+
+    // show toast prompt if word is already played
+    if (!isNotAlreadyPlayed)
+      Fluttertoast.showToast(
+          msg: "Word played already",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    // since word played before is definitely in dictionary,
+    // safe to add prompt for invalid word together here without additional condition
+    if (!isInDictionary)
+      Fluttertoast.showToast(
+          msg: "Invalid word",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+
+    return isNotAlreadyPlayed && isInDictionary;
+  }
+
+  int incrementTick() {
+    currentTick += 1;
+    // shift currentgamerowpointer up
+    currentGameRowPointer -= 1;
+    // remove first row
+    currentGameGrid.removeAt(0);
+    // add a filler row to the last
+    currentGameGrid.add(List.generate(8, (index) => ""));
+    // ticker limit logic in UI file
+    notifyListeners();
+    return currentTick;
+  }
+
+  // reset game with initial values values
+  void resetGame() {
+    currentGameGrid =
+        List.generate(10, (index) => List.generate(8, (index) => ""));
+    currentGameRowPointer = 9;
+    currentRandomGameRowLength = 0;
+    currentScore = 0;
+    playedWords = [];
+    currentTick = 0; //0-9 seconds
+    generateFirstGameRow();
+  }
+
+  /// function for testing game logic with command-line input
+  // static List<String> fillGameArray(List<String> gArray, int gameWordLength) {
+  //   for (int i = 1; i < gameWordLength; i++) {
+  //     Helper.debugPrint(i);
+  //     if (gArray[i] == '') {
+  //       String? userInputLetter = userInput();
+  //       if (userInputLetter != null && userInputLetter.isNotEmpty) {
+  //         gArray[i] = userInputLetter;
+  //         Helper.debugPrint(gArray); // Print gameArray after each modification
+  //       } else {
+  //         i--; // Decrement i to reprocess the same index in case of empty input
+  //       }
+  //     }
+  //   }
+  //   return gArray;
+  // }
+
+  // one-time use only (command-line dart)
+  void generateIndexedJson() {
+    File jsonSourceFile = File("assets/words_dictionary.json");
+    Map wordMap = json.decode(jsonSourceFile.readAsStringSync());
+    String currentWord;
+
+    wordMap.entries.forEach((entry) {
+      // word in json list
+      currentWord = entry.key.trim().toLowerCase();
+      // if no first letter entry in result json map, create entry with key = word and value = empty list
+      if (!indexedWordMapDictionary.containsKey(currentWord[0])) {
+        indexedWordMapDictionary[currentWord[0]] = [];
+      }
+      // filter word in word list by length and add to result json map inside the key index list
+      if (currentWord.length > 2 && currentWord.length < 9) {
+        indexedWordMapDictionary[currentWord[0]].add(currentWord);
+      }
+    });
+
+    // save the indexed word list
+    File jsonResultFile = File("assets/words_dictionary_index.json");
+    jsonResultFile.writeAsStringSync(json.encode(indexedWordMapDictionary));
+  }
+
+  // To be called on app start or game start for refreshing of list
+  Future<void> populateIndexedWordMap() async {
+    final jsonString =
+        await rootBundle.loadString("assets/words_dictionary_index.json");
+    indexedWordMapDictionary = json.decode(jsonString);
+  }
+
+  // read high score from app key-value pair cache (SharedPreferences)
+  Future<void> readHighScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    highScore = prefs.getInt(highScorePrefsKey) ?? 0;
     notifyListeners();
   }
 
-  void playTurn(int gridIndex){
-    AudioController.playFlipCardSound();
-    Helper.debugPrint("Placing counter on $gridIndex card");
-    if (oneEyedJackSelected())
-      counterGrid[gridIndex] = null;
-    else
-      placeCounter(gridIndex);
-    gameRoomPlayedCards.add(
-      player1Turn
-        ? player1Hand.removeAt(selectedCardHandIndex!)
-        : player2Hand.removeAt(selectedCardHandIndex!)
-    );
-    currentPlayerPlayed = true;
-    unSelectCard();
-    checkWinGame();
-    notifyListeners();
-  }
-
-  bool checkSequenceInAllDirections(int gridIndex, String? counter){
-    // check left
-    for (int i = gridIndex, j = 0; i % 9 != 0; i--){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)) {
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check right
-    for (int i = gridIndex, j = 0; i % 10 != 0; i++){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)) {
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check top
-    for (int i = gridIndex, j = 0; i > 0; i -= 10) {
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)) {
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check bottom
-    for (int i = gridIndex, j = 0; i < 100; i += 10) {
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)) {
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check top-left diagonal
-    for (int i = gridIndex, j = 0; (i > 0 && (i % 9 != 0)); i -= 11){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)){
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check bottom-right diagonal
-    for (int i = gridIndex, j = 0; (i < 100 && (i % 10 != 0)); i += 11){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)){
-        if (++j == 5) return true;
-      }
-      else break;
-    }
-
-    // check bottom-left diagonal
-    for (int i = gridIndex, j =0; i < 100; i += 9){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)){
-        if (++j == 5) return true;
-        if (i % 10 == 0) break;
-      }
-      else break;
-    }
-
-    // check top-right diagonal
-    for (int i = gridIndex, j =0; i > 0; i -= 9){
-      if (counterGrid[i] == counter || compareCards(grid1D[i], cornerCard)){
-        if (++j == 5) return true;
-        if (i % 9 == 0) break;
-      }
-      else break;
-    }
-
-    return false;
-  }
-
-  void checkWinGame(){
-    for (int i = 0; i < counterGrid.length; i++){
-      if (counterGrid[i] != null && checkSequenceInAllDirections(i, counterGrid[i])){
-        gameWonBy = counterGrid[i]; // already calling notifyListener in coupled function
-        AudioController.playGameWinSound();
-        break;
-      }
-    }
-  }
-
-  Widget getPlayerCounterContainer(){
-    return Container(
-      width: 20, height: 20,
-      decoration: BoxDecoration(
-        color: player1Turn ? Colors.red : Colors.blue,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  Future<void> clearGame() async {
-    randomizer = Random();
-    counterGrid = List.generate(grid1D.length, (index) => null);
-
-    gameRoomDeck.clear();
-    gameRoomPlayedCards.clear();
-    gameRoomDeck.addAll(standardFiftyTwoCardDeck());
-    gameRoomDeck.addAll(standardFiftyTwoCardDeck());
-
-    selectedCard = null;
-    selectedCardHandIndex = 0;
-
-    player1Turn = true;
-    showingCards = false;
-    currentPlayerPlayed = false;
-    gameWonBy = null;
-
-    player1Hand.clear();
-    player2Hand.clear();
-    fillHandsFirst();
-    notifyListeners();
+  // save high score to app key-value pair cache (SharedPreferences)
+  Future<void> saveHighScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(highScorePrefsKey, highScore);
   }
 }

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
-import 'package:sequence/controllers/game_copy.dart';
+import '../controllers/game.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -13,10 +13,11 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
-  List row1 = "QWERTYUIOP".split("");
-  List row2 = "ASDFGHJKL".split("");
-  List row3 = "ZXCVBNM".split("");
-  List row4 = ["1"];
+  final List row1 = "qwertyuiop".split("");
+  final List row2 = "asdfghjkl".split("");
+  final List row3 = "zxcvbnm".split("");
+  final List row4 = ["1"];
+
   late final Timer tickTimer;
   late List<Widget> gameCards;
 
@@ -25,7 +26,8 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     tickTimer = Timer.periodic(Duration(seconds: 1), (thisTimer) {
       int nowTick =
           Provider.of<LainGame>(context, listen: false).incrementTick();
-      setState(() {});
+      Fluttertoast.cancel();
+      // setState(() {});
       if (nowTick > 9) {
         Fluttertoast.showToast(
             msg: "Time up",
@@ -77,12 +79,38 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
         ),
       );
 
+  Widget keyboardCard(String letter) => GestureDetector(
+      onTap: () {
+        Provider.of<LainGame>(context, listen: false).userInput(letter);
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 2),
+        alignment: Alignment.center,
+        height: MediaQuery.of(context).size.height * (40 / 820),
+        width: MediaQuery.of(context).size.width *
+            (letter == "1" ? 150 : 36) /
+            411,
+        decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 253, 221, 220),
+            borderRadius: BorderRadius.circular(8)),
+        child: Text(
+          letter == "1" ? "DELETE" : letter.toUpperCase(),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontSize: 25,
+              color: Color.fromARGB(255, 242, 111, 121),
+              fontWeight: FontWeight.w600),
+        ),
+      ));
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<LainGame>(builder: (context, lainGameState, child) {
-      return Scaffold(
-        backgroundColor: Color.fromRGBO(250, 202, 201, 1),
-        body: SafeArea(
+    print(MediaQuery.of(context).size.width);
+    print(MediaQuery.of(context).size.height);
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(250, 202, 201, 1),
+      body: Consumer<LainGame>(builder: (context, lainGameState, child) {
+        return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -90,7 +118,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                   child: Row(
                     children: [
-                      Text("SCORE ",
+                      Text("SCORE  ",
                           style: Theme.of(context)
                               .textTheme
                               .headline1
@@ -107,12 +135,12 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                   color: Color.fromARGB(255, 59, 65, 50),
                                   fontWeight: FontWeight.w600)),
                       Spacer(),
-                      Text("HIGH SCORE ",
+                      Text("HIGH SCORE  ",
                           style: Theme.of(context)
                               .textTheme
                               .headline1
                               ?.copyWith(
-                                  fontSize: 16,
+                                  fontSize: 22,
                                   color: Color.fromARGB(255, 242, 111, 121),
                                   fontWeight: FontWeight.w800)),
                       Text("${lainGameState.highScore}",
@@ -120,18 +148,18 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                               .textTheme
                               .headline1
                               ?.copyWith(
-                                  fontSize: 16,
+                                  fontSize: 22,
                                   color: Color.fromARGB(255, 59, 65, 50),
                                   fontWeight: FontWeight.w600)),
                     ],
                   )),
               GridView.count(
                   padding: EdgeInsets.symmetric(horizontal: 10),
-                  crossAxisSpacing: 3, // Add vertical spacing between boxes
+                  crossAxisSpacing: 5, // Add horizontal spacing between boxes
                   mainAxisSpacing: 5,
                   crossAxisCount: 8,
                   shrinkWrap: true,
-                  childAspectRatio: 0.99,
+                  childAspectRatio: 0.97,
                   children:
                       lainGameState.flattenedGameGrid().map<Widget>((value) {
                     if (value == "")
@@ -141,148 +169,48 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   }).toList()),
             ],
           ),
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                //Start from here for grid
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: row1.map((letter) {
-                      return GestureDetector(
-                        onTap: () {
-                          lainGameState.userInput(letter);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 40,
-                            width: 37,
-                            decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 253, 221, 220),
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(
-                              "$letter",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Color.fromARGB(255, 242, 111, 121),
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+        );
+      }),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              //Start from here for grid
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: row1.map((letter) => keyboardCard(letter)).toList(),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: row2.map((letter) {
-                      return GestureDetector(
-                        onTap: () {
-                          lainGameState.userInput(letter);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 40,
-                            width: 37,
-                            decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 253, 221, 220),
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(
-                              "$letter",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Color.fromARGB(255, 242, 111, 121),
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: row2.map((letter) => keyboardCard(letter)).toList(),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: row3.map((letter) {
-                      return GestureDetector(
-                        onTap: () {
-                          lainGameState.userInput(letter);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 40,
-                            width: 37,
-                            decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 253, 221, 220),
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(
-                              "$letter",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Color.fromARGB(255, 242, 111, 121),
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: row3.map((letter) => keyboardCard(letter)).toList(),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: row4.map((letter) {
-                      return GestureDetector(
-                        onTap: () {
-                          lainGameState.userInput(letter);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 37,
-                            width: 150,
-                            decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 253, 221, 220),
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(
-                              "${letter == "1" ? "Delete" : letter}",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Color.fromARGB(255, 242, 111, 121),
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: row4.map((letter) => keyboardCard(letter)).toList(),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 
   void tutorialPressed() {}
