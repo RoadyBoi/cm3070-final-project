@@ -105,8 +105,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    print(MediaQuery.of(context).size.width);
-    print(MediaQuery.of(context).size.height);
     return Scaffold(
       backgroundColor: Color.fromRGBO(250, 202, 201, 1),
       body: Consumer<LainGame>(builder: (context, lainGameState, child) {

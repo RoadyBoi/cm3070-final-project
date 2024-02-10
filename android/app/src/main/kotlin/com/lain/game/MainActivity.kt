@@ -1,4 +1,4 @@
-package com.ion.sequence
+package com.lain.game
 
 import io.flutter.embedding.android.FlutterActivity
 

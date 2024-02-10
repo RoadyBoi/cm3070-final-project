@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "sequence",
+            "name": "LAIN",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "sequence (profile mode)",
+            "name": "LAIN (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "sequence (release mode)",
+            "name": "LAIN (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

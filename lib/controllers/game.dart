@@ -62,6 +62,8 @@ class LainGame extends ChangeNotifier {
     maxGameWordLength = difficultyLevel;
   }
 
+  int getGameDifficulty() => maxGameWordLength;
+
   // create first game row with random first letter and random length
   // first row will be the last row in the grid [9] so that rows
   // move bottom to top
@@ -171,6 +173,9 @@ class LainGame extends ChangeNotifier {
   }
 
   bool validateWord(List<String> wordArray) {
+    // cancel any open toasts
+    Fluttertoast.cancel();
+
     // first letter to be used as index
     String currentPlayedWord = wordArray.join().trim().toLowerCase();
     String firstLetter = currentPlayedWord[0];
@@ -184,8 +189,6 @@ class LainGame extends ChangeNotifier {
     bool isInDictionary =
         indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
     Helper.debugPrint("isInDictionary: $isInDictionary");
-
-    Fluttertoast.cancel();
 
     // show toast prompt if word is already played
     if (!isNotAlreadyPlayed)

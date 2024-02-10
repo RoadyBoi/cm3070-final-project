@@ -1,3 +1,3 @@
-# sequence
+# LAIN
 
-Sequence Game
+Lain Game

@@ -6,11 +6,18 @@ class NavigationErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(automaticallyImplyLeading: true,),
+        appBar: AppBar(
+          automaticallyImplyLeading: true,
+        ),
         body: Center(
-          child: Text("Navigation error: routeName = $routeName",
-            style: Theme.of(context).textTheme.headline1?.copyWith(color: Colors.black), textAlign: TextAlign.center,),
-        )
-    );
+          child: Text(
+            "Navigation error: routeName = $routeName",
+            style: Theme.of(context)
+                .textTheme
+                .headline1
+                ?.copyWith(color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+        ));
   }
 }

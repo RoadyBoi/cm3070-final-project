@@ -10,16 +10,16 @@ void main() async {
   runApp(ChangeNotifierProvider(
       lazy: false,
       create: (BuildContext context) => LainGame(),
-      child: SequenceApp()));
+      child: LainApp()));
 }
 
-class SequenceApp extends StatefulWidget {
-  const SequenceApp({super.key});
+class LainApp extends StatefulWidget {
+  const LainApp({super.key});
   @override
-  State<SequenceApp> createState() => _SequenceAppState();
+  State<LainApp> createState() => _LainAppState();
 }
 
-class _SequenceAppState extends State<SequenceApp> with WidgetsBindingObserver {
+class _LainAppState extends State<LainApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
@@ -32,12 +32,12 @@ class _SequenceAppState extends State<SequenceApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sequence',
+      title: 'LAIN',
       navigatorKey: Settings.navigatorKey,
       scaffoldMessengerKey: Settings.scaffoldMessengerKey,
       onGenerateRoute: RouteGenerator.onGenerateRoute,
       initialRoute: "/SplashScreen",
-      theme: SequenceAppTheme.baseTheme,
+      theme: LainAppTheme.baseTheme,
       debugShowCheckedModeBanner: false,
     );
   }

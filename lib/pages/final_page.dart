@@ -64,8 +64,7 @@ class FinalPage extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Provider.of<LainGame>(context, listen: false).resetGame();
-                    Navigator.of(context)
-                        .pushReplacementNamed('/GameRoomScreen');
+                    Navigator.of(context).pushReplacementNamed('/StartScreen');
                   },
                   style: ButtonStyle(
                       backgroundColor: MaterialStatePropertyAll<Color>(
