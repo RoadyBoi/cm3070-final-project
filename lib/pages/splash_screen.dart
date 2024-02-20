@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/circle_loader.dart';
 
+//import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 class SplashScreenPage extends StatefulWidget {
   const SplashScreenPage({super.key});
   @override
@@ -10,6 +12,9 @@ class SplashScreenPage extends StatefulWidget {
 class _SplashScreenPageState extends State<SplashScreenPage> {
   @override
   void initState() {
+    // simulated crash for firebase crashlytics to complete setup (to use once per platform)
+    //FirebaseCrashlytics.instance.crash();
+
     Future.delayed(Duration(seconds: 3), () {
       Navigator.of(context).pushReplacementNamed("/StartScreen");
     });

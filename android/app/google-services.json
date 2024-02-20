@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "497802509816",
+    "project_id": "lain-ccaf4",
+    "storage_bucket": "lain-ccaf4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:497802509816:android:ad904f05188baec12a6a0d",
+        "android_client_info": {
+          "package_name": "com.lain.game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCIvNlfeUAimm6nHB3IyuxkwcULgtme-s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
