@@ -23,24 +23,45 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return WillPopScope(
       onWillPop: () async {
         return false;
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset("assets/images/sequence_logo.png"),
-                  SizedBox(
-                    height: 60,
-                  ),
-                  CircleLoader(),
-                ],
+        body: Container(
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/images/background.png"),
+                  fit: BoxFit.fill)),
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        "LAIN",
+                        style: Theme.of(context).textTheme.headline1?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: width * 0.35,
+                            color: const Color.fromARGB(255, 66, 71, 86),
+                            letterSpacing: width / 80),
+                      ),
+                    ),
+                    SizedBox(
+                      height: height * 0.1,
+                    ),
+                    CircleLoader(),
+                    SizedBox(
+                      height: height * 0.2,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

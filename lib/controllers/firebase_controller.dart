@@ -17,6 +17,8 @@ class FirebaseController {
                 : "1:497802509816:android:ad904f05188baec12a6a0d",
             messagingSenderId: "497802509816",
             projectId: "497802509816"));
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+    await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
   }
 
   static void initializeFirebaseCrashlytics() {

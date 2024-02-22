@@ -14,6 +14,10 @@ const String highScorePrefsKey = "LAINHighScorePrefsKey";
 final List<String> letterList =
     List.generate(26, (index) => String.fromCharCode(index + 97));
 
+late final Map indexedWordMap5LetterDictionary,
+    indexedWordMap6LetterDictionary,
+    indexedWordMap8LetterDictionary;
+
 /// LainGame class is built on the Provider, a state management framework,
 /// to implement the game logic. LainGame is ChangeNotifier class
 /// that is provided to the root widget of the app using and changes to
@@ -61,7 +65,7 @@ class LainGame extends ChangeNotifier {
   // difficulty level (5 = casual, 6 = challenging, 8 = complex)
   void setGameDifficulty(int difficultyLevel) {
     maxGameWordLength = difficultyLevel;
-    populateIndexedWordMap();
+    selectIndexedWordMap();
   }
 
   int intGetGameMaxWordLength() => maxGameWordLength;
@@ -99,12 +103,10 @@ class LainGame extends ChangeNotifier {
   }
 
   // create next active game row
-  void generateNextGameRow(String lastGameWordLetter) {
-    Trace? performanceTrace;
-    FirebaseController.createAndStartNewTrace("generateNexGameRow",
-        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
-      performanceTrace = trace;
-    });
+  Future<void> generateNextGameRow(String lastGameWordLetter) async {
+    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+        "generateNextGameRow",
+        attributes: {'difficulty': getGameDifficulty()});
 
     // remove the top row of the grid
     currentGameGrid.removeAt(0);
@@ -129,7 +131,7 @@ class LainGame extends ChangeNotifier {
     currentTick = 0;
     // send update to UI (Consumers)
     notifyListeners();
-    performanceTrace?.stop();
+    await performanceTrace.stop();
   }
 
   // flatten the 2d game grid for GridView widget's children
@@ -144,12 +146,10 @@ class LainGame extends ChangeNotifier {
   }
 
   // user game input handler
-  void userInput(String keyInput) {
-    Trace? performanceTrace;
-    FirebaseController.createAndStartNewTrace("userInput",
-        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
-      performanceTrace = trace;
-    });
+  Future<void> userInput(String keyInput) async {
+    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+        "userInput",
+        attributes: {'difficulty': getGameDifficulty()});
     // if input is delete flag ("1"), delete last letter from game row
     if (keyInput == "1") {
       // limit deletion up to second letter
@@ -172,15 +172,13 @@ class LainGame extends ChangeNotifier {
       notifyListeners();
     }
     Helper.debugPrint(
-        "currentActiveLetterPositionPointer: $currentActiveLetterPositionPointer");
-    Helper.debugPrint(
-        "currentRandomGameRowLength: $currentRandomGameRowLength");
-    Helper.debugPrint(
+        "currentActiveLetterPositionPointer: $currentActiveLetterPositionPointer\n"
+        "currentRandomGameRowLength: $currentRandomGameRowLength\n"
         "currentGameRow: ${currentGameGrid[currentGameRowPointer]}");
 
     // if game row is filled, validate word
     if (currentActiveLetterPositionPointer == currentRandomGameRowLength) {
-      if (validateWord(currentGameGrid[currentGameRowPointer])) {
+      if (await validateWord(currentGameGrid[currentGameRowPointer])) {
         // if valid word, add to score and played words
         currentScore += currentRandomGameRowLength;
         // if high score beaten, update high score
@@ -189,7 +187,7 @@ class LainGame extends ChangeNotifier {
         }
         addCurrentValidWordtoPlayedWords();
         // generate next game row
-        generateNextGameRow(currentGameGrid[currentGameRowPointer]
+        await generateNextGameRow(currentGameGrid[currentGameRowPointer]
             [currentRandomGameRowLength - 1]);
       }
     }
@@ -198,18 +196,16 @@ class LainGame extends ChangeNotifier {
     // } else {
     //   return null;
     // }
-    performanceTrace?.stop();
+    await performanceTrace.stop();
   }
 
-  bool validateWord(List<String> wordArray) {
+  Future<bool> validateWord(List<String> wordArray) async {
     // cancel any open toasts
-    Fluttertoast.cancel();
+    await Fluttertoast.cancel();
 
-    Trace? performanceTrace;
-    FirebaseController.createAndStartNewTrace("validateWord",
-        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
-      performanceTrace = trace;
-    });
+    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+        "validateWord",
+        attributes: {'difficulty': getGameDifficulty()});
 
     // first letter to be used as index
     String currentPlayedWord = wordArray.join().trim().toLowerCase();
@@ -225,7 +221,7 @@ class LainGame extends ChangeNotifier {
         indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
     Helper.debugPrint("isInDictionary: $isInDictionary");
 
-    performanceTrace?.stop();
+    await performanceTrace.stop();
 
     // show toast prompt if word is already played
     if (!isNotAlreadyPlayed)
@@ -250,12 +246,10 @@ class LainGame extends ChangeNotifier {
     return isNotAlreadyPlayed && isInDictionary;
   }
 
-  int incrementTick() {
-    Trace? performanceTrace;
-    FirebaseController.createAndStartNewTrace("incrementTick",
-        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
-      performanceTrace = trace;
-    });
+  Future<int> incrementTick() async {
+    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+        "incrementTick",
+        attributes: {'difficulty': getGameDifficulty()});
     currentTick += 1;
     // shift currentgamerowpointer up
     currentGameRowPointer -= 1;
@@ -265,7 +259,7 @@ class LainGame extends ChangeNotifier {
     currentGameGrid.add(List.generate(8, (index) => ""));
     // ticker limit logic in UI file
     notifyListeners();
-    performanceTrace?.stop();
+    await performanceTrace.stop();
     return currentTick;
   }
 
@@ -278,6 +272,7 @@ class LainGame extends ChangeNotifier {
     currentScore = 0;
     playedWords = [];
     currentTick = 0; //0-9 seconds
+    selectIndexedWordMap();
     generateFirstGameRow();
   }
 
@@ -299,11 +294,33 @@ class LainGame extends ChangeNotifier {
   // }
 
   // To be called on app start or game start for refreshing of list
-  /// EXTENSION words_dictionary_index_$maxGameWordLength.json for improving performance
   Future<void> populateIndexedWordMap() async {
-    final jsonString = await rootBundle
-        .loadString("assets/words_dictionary_index_$maxGameWordLength.json");
-    indexedWordMapDictionary = json.decode(jsonString);
+    await Future.wait([
+      rootBundle.loadString("assets/words_dictionary_index_5.json").then(
+          (value) => indexedWordMap5LetterDictionary = json.decode(value)),
+      rootBundle.loadString("assets/words_dictionary_index_6.json").then(
+          (value) => indexedWordMap6LetterDictionary = json.decode(value)),
+      rootBundle.loadString("assets/words_dictionary_index_8.json").then(
+          (value) => indexedWordMap8LetterDictionary = json.decode(value)),
+    ]).then((value) {
+      selectIndexedWordMap();
+    });
+  }
+
+  /// EXTENSION condition on maxGameWordLength to select word dictionary
+  /// map for improving performance
+  void selectIndexedWordMap() {
+    switch (maxGameWordLength) {
+      case 5:
+        indexedWordMapDictionary = indexedWordMap5LetterDictionary;
+        break;
+      case 6:
+        indexedWordMapDictionary = indexedWordMap6LetterDictionary;
+        break;
+      case 8:
+        indexedWordMapDictionary = indexedWordMap8LetterDictionary;
+        break;
+    }
   }
 
   // read high score from app key-value pair cache (SharedPreferences)

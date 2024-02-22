@@ -28,8 +28,9 @@ class _LainAppState extends State<LainApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      Provider.of<LainGame>(context, listen: false).populateIndexedWordMap();
-      Provider.of<LainGame>(context, listen: false).readHighScore();
+      await Provider.of<LainGame>(context, listen: false)
+          .populateIndexedWordMap();
+      await Provider.of<LainGame>(context, listen: false).readHighScore();
     }
     super.didChangeAppLifecycleState(state);
   }

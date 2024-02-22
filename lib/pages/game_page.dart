@@ -23,10 +23,10 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   @override
   void initState() {
-    tickTimer = Timer.periodic(Duration(seconds: 1), (thisTimer) {
+    tickTimer = Timer.periodic(Duration(seconds: 1), (thisTimer) async {
       int nowTick =
-          Provider.of<LainGame>(context, listen: false).incrementTick();
-      Fluttertoast.cancel();
+          await Provider.of<LainGame>(context, listen: false).incrementTick();
+      await Fluttertoast.cancel();
       // setState(() {});
       if (nowTick > 9) {
         Fluttertoast.showToast(
