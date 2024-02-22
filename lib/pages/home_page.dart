@@ -16,7 +16,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     _difficultyRadioValue =
-        Provider.of<LainGame>(context, listen: false).getGameDifficulty();
+        Provider.of<LainGame>(context, listen: false).intGetGameMaxWordLength();
     AudioController.playGameStartSound();
     super.initState();
   }

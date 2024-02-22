@@ -249,6 +249,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.6.22"
+  firebase_performance:
+    dependency: "direct main"
+    description:
+      name: firebase_performance
+      sha256: "75afdbc2a3d8d3622c52ce650eee5708c097ff0731a31aec40b2728ec1f69d66"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.3+14"
+  firebase_performance_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_performance_platform_interface
+      sha256: "7a8aa16c45fe438fbfb1371b7480dde3313f06284a00b51ae5961ef53c07572d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.4+22"
+  firebase_performance_web:
+    dependency: transitive
+    description:
+      name: firebase_performance_web
+      sha256: feb18f29378787208dfbd2b16bf80c7787af50550247250c99881407d7f63431
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.4+22"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -448,14 +472,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0"
-  playing_cards:
-    dependency: "direct main"
-    description:
-      name: playing_cards
-      sha256: "392d5e42317ec657f6814a282e6bb70942c6599d22dac89cdc741a8b2b095d09"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.1+11"
   plugin_platform_interface:
     dependency: transitive
     description:

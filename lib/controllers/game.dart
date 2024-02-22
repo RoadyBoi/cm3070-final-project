@@ -1,8 +1,9 @@
 import 'dart:math';
-import 'dart:io';
 import 'dart:convert';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:lain/controllers/firebase_controller.dart';
 import '../constants/helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +14,10 @@ const String highScorePrefsKey = "LAINHighScorePrefsKey";
 final List<String> letterList =
     List.generate(26, (index) => String.fromCharCode(index + 97));
 
-/// LainGame class uses provider architecture for state management
+/// LainGame class is built on the Provider, a state management framework,
 /// to implement the game logic. LainGame is ChangeNotifier class
-/// that is provided to the root widget of the app and changes to
-/// LainGame class members update the Consumer widgets that are listening
+/// that is provided to the root widget of the app using and changes to
+/// LainGame class members update the Consumer widgets that apply listeners
 /// using the function notifyListeners()
 class LainGame extends ChangeNotifier {
   // game grid (8 x 10)
@@ -60,9 +61,24 @@ class LainGame extends ChangeNotifier {
   // difficulty level (5 = casual, 6 = challenging, 8 = complex)
   void setGameDifficulty(int difficultyLevel) {
     maxGameWordLength = difficultyLevel;
+    populateIndexedWordMap();
   }
 
-  int getGameDifficulty() => maxGameWordLength;
+  int intGetGameMaxWordLength() => maxGameWordLength;
+
+  String getGameDifficulty() {
+    switch (maxGameWordLength) {
+      case 5:
+        return "Casual";
+      case 6:
+        return "Challenging";
+      case 8:
+        return "Competitive";
+      default:
+        throw RangeError(
+            "maxGameWordLength is set to $maxGameWordLength which is not in valid range [5,6,8]");
+    }
+  }
 
   // create first game row with random first letter and random length
   // first row will be the last row in the grid [9] so that rows
@@ -84,6 +100,12 @@ class LainGame extends ChangeNotifier {
 
   // create next active game row
   void generateNextGameRow(String lastGameWordLetter) {
+    Trace? performanceTrace;
+    FirebaseController.createAndStartNewTrace("generateNexGameRow",
+        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
+      performanceTrace = trace;
+    });
+
     // remove the top row of the grid
     currentGameGrid.removeAt(0);
     // create new row as game row with first letter as last game word letter
@@ -107,6 +129,7 @@ class LainGame extends ChangeNotifier {
     currentTick = 0;
     // send update to UI (Consumers)
     notifyListeners();
+    performanceTrace?.stop();
   }
 
   // flatten the 2d game grid for GridView widget's children
@@ -122,6 +145,11 @@ class LainGame extends ChangeNotifier {
 
   // user game input handler
   void userInput(String keyInput) {
+    Trace? performanceTrace;
+    FirebaseController.createAndStartNewTrace("userInput",
+        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
+      performanceTrace = trace;
+    });
     // if input is delete flag ("1"), delete last letter from game row
     if (keyInput == "1") {
       // limit deletion up to second letter
@@ -170,11 +198,18 @@ class LainGame extends ChangeNotifier {
     // } else {
     //   return null;
     // }
+    performanceTrace?.stop();
   }
 
   bool validateWord(List<String> wordArray) {
     // cancel any open toasts
     Fluttertoast.cancel();
+
+    Trace? performanceTrace;
+    FirebaseController.createAndStartNewTrace("validateWord",
+        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
+      performanceTrace = trace;
+    });
 
     // first letter to be used as index
     String currentPlayedWord = wordArray.join().trim().toLowerCase();
@@ -189,6 +224,8 @@ class LainGame extends ChangeNotifier {
     bool isInDictionary =
         indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
     Helper.debugPrint("isInDictionary: $isInDictionary");
+
+    performanceTrace?.stop();
 
     // show toast prompt if word is already played
     if (!isNotAlreadyPlayed)
@@ -214,6 +251,11 @@ class LainGame extends ChangeNotifier {
   }
 
   int incrementTick() {
+    Trace? performanceTrace;
+    FirebaseController.createAndStartNewTrace("incrementTick",
+        attributes: {'difficulty': getGameDifficulty()}).then((trace) {
+      performanceTrace = trace;
+    });
     currentTick += 1;
     // shift currentgamerowpointer up
     currentGameRowPointer -= 1;
@@ -223,6 +265,7 @@ class LainGame extends ChangeNotifier {
     currentGameGrid.add(List.generate(8, (index) => ""));
     // ticker limit logic in UI file
     notifyListeners();
+    performanceTrace?.stop();
     return currentTick;
   }
 
@@ -255,34 +298,11 @@ class LainGame extends ChangeNotifier {
   //   return gArray;
   // }
 
-  // one-time use only (command-line dart)
-  void generateIndexedJson() {
-    File jsonSourceFile = File("assets/words_dictionary.json");
-    Map wordMap = json.decode(jsonSourceFile.readAsStringSync());
-    String currentWord;
-
-    wordMap.entries.forEach((entry) {
-      // word in json list
-      currentWord = entry.key.trim().toLowerCase();
-      // if no first letter entry in result json map, create entry with key = word and value = empty list
-      if (!indexedWordMapDictionary.containsKey(currentWord[0])) {
-        indexedWordMapDictionary[currentWord[0]] = [];
-      }
-      // filter word in word list by length and add to result json map inside the key index list
-      if (currentWord.length > 2 && currentWord.length < 9) {
-        indexedWordMapDictionary[currentWord[0]].add(currentWord);
-      }
-    });
-
-    // save the indexed word list
-    File jsonResultFile = File("assets/words_dictionary_index.json");
-    jsonResultFile.writeAsStringSync(json.encode(indexedWordMapDictionary));
-  }
-
   // To be called on app start or game start for refreshing of list
+  /// EXTENSION words_dictionary_index_$maxGameWordLength.json for improving performance
   Future<void> populateIndexedWordMap() async {
-    final jsonString =
-        await rootBundle.loadString("assets/words_dictionary_index.json");
+    final jsonString = await rootBundle
+        .loadString("assets/words_dictionary_index_$maxGameWordLength.json");
     indexedWordMapDictionary = json.decode(jsonString);
   }
 
