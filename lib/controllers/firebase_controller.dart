@@ -1,8 +1,17 @@
 import 'dart:io';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+class AnalyticsEvents {
+  static const String GAME_START = "game_start",
+      GAME_END = "game_end",
+      INVALID_WORD = "invalid_word_played",
+      WORD_PLAYED = "word_played";
+}
 
 class FirebaseController {
   static Future<void> initializeFirebaseApp() async {
@@ -19,10 +28,11 @@ class FirebaseController {
             projectId: "497802509816"));
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
     await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
   }
 
+  /// Firebase Crashlytics`
   static void initializeFirebaseCrashlytics() {
-    /// Firebase Crashlytics
     FirebaseCrashlytics.instance.sendUnsentReports();
     // Pass all uncaught "fatal" errors from the framework to Crashlytics
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -33,6 +43,7 @@ class FirebaseController {
     };
   }
 
+  /// Firebase Performance Monitoring
   static Future<Trace> createAndStartNewTrace(String traceName,
       {Map<String, String>? attributes}) async {
     Trace customTrace = FirebasePerformance.instance.newTrace(traceName);
@@ -40,5 +51,23 @@ class FirebaseController {
     await customTrace.start();
 
     return customTrace;
+  }
+
+  /// Firebase Analytics
+  static Future logEvent({
+    required String event,
+    Map<String, String>? params,
+  }) async {
+    await FirebaseAnalytics.instance.logEvent(
+      name: event,
+      parameters: params,
+    );
+  }
+
+  static Future<void> setAnalyticsAppVersion() async {
+    String version = await PackageInfo.fromPlatform()
+        .then<String>((packageInfo) => packageInfo.version);
+    await FirebaseAnalytics.instance
+        .setDefaultEventParameters({'version': version});
   }
 }

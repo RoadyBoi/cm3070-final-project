@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:lain/controllers/audio.dart';
 import 'package:lain/controllers/firebase_controller.dart';
 import '../constants/helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ const String highScorePrefsKey = "LAINHighScorePrefsKey";
 final List<String> letterList =
     List.generate(26, (index) => String.fromCharCode(index + 97));
 
+// indexed word dictionary maps to be used for word checking
 late final Map indexedWordMap5LetterDictionary,
     indexedWordMap6LetterDictionary,
     indexedWordMap8LetterDictionary;
@@ -47,9 +49,10 @@ class LainGame extends ChangeNotifier {
   int highScore = 0;
 
   LainGame() {
-    populateIndexedWordMap();
+    populateIndexedWordMap().then((_) {
+      selectIndexedWordMapBasedOnDifficulty();
+    });
     readHighScore();
-    generateFirstGameRow();
   }
 
   // get random letter from letter list for first game row
@@ -58,17 +61,19 @@ class LainGame extends ChangeNotifier {
   // calculate random length of the word to play next
   void calculateRandomGameRowLength() {
     currentRandomGameRowLength =
-        3 + Random().nextInt((maxGameWordLength + 1) - 3);
+        Random().nextInt((maxGameWordLength + 1) - 3) + 3;
+    Helper.debugPrint(
+        "CurrentRandomGameRowLength: $currentRandomGameRowLength");
   }
 
   // set game difficulty
   // difficulty level (5 = casual, 6 = challenging, 8 = complex)
   void setGameDifficulty(int difficultyLevel) {
     maxGameWordLength = difficultyLevel;
-    selectIndexedWordMap();
+    selectIndexedWordMapBasedOnDifficulty();
   }
 
-  int intGetGameMaxWordLength() => maxGameWordLength;
+  int getGameMaxWordLength() => maxGameWordLength;
 
   String getGameDifficulty() {
     switch (maxGameWordLength) {
@@ -80,7 +85,8 @@ class LainGame extends ChangeNotifier {
         return "Competitive";
       default:
         throw RangeError(
-            "maxGameWordLength is set to $maxGameWordLength which is not in valid range [5,6,8]");
+            "maxGameWordLength is currently set to $maxGameWordLength"
+            "which is not in valid range [5,6,8]");
     }
   }
 
@@ -88,6 +94,8 @@ class LainGame extends ChangeNotifier {
   // first row will be the last row in the grid [9] so that rows
   // move bottom to top
   void generateFirstGameRow() {
+    // clear first game row
+    currentGameGrid.last = List.generate(8, (index) => "");
     currentGameGrid[9][0] = getFirstLetter();
     calculateRandomGameRowLength();
     // keeping spaces " " indicates game row box, "" indicates filler box
@@ -179,6 +187,8 @@ class LainGame extends ChangeNotifier {
     // if game row is filled, validate word
     if (currentActiveLetterPositionPointer == currentRandomGameRowLength) {
       if (await validateWord(currentGameGrid[currentGameRowPointer])) {
+        // play played word sound
+        AudioController.playValidWordSound();
         // if valid word, add to score and played words
         currentScore += currentRandomGameRowLength;
         // if high score beaten, update high score
@@ -186,16 +196,21 @@ class LainGame extends ChangeNotifier {
           highScore = currentScore;
         }
         addCurrentValidWordtoPlayedWords();
+        // log played word event
+        FirebaseController.logEvent(
+            event: AnalyticsEvents.WORD_PLAYED,
+            params: {
+              "difficulty": getGameDifficulty().toLowerCase(),
+              "word_length": currentRandomGameRowLength.toString()
+            });
         // generate next game row
         await generateNextGameRow(currentGameGrid[currentGameRowPointer]
             [currentRandomGameRowLength - 1]);
+      } else {
+        // if word was not valid, play invalid word sound
+        AudioController.playInvalidWordSound();
       }
     }
-    // else if (keyInput.isNotEmpty) {
-    //    keyInput.trim().toLowerCase()[0];
-    // } else {
-    //   return null;
-    // }
     await performanceTrace.stop();
   }
 
@@ -224,6 +239,8 @@ class LainGame extends ChangeNotifier {
     await performanceTrace.stop();
 
     // show toast prompt if word is already played
+    // since word played before is definitely in dictionary,
+    // it is safe to add prompt for invalid word together here without additional condition
     if (!isNotAlreadyPlayed)
       Fluttertoast.showToast(
           msg: "Word played already",
@@ -232,9 +249,9 @@ class LainGame extends ChangeNotifier {
           backgroundColor: Colors.red,
           textColor: Colors.white,
           fontSize: 16.0);
-    // since word played before is definitely in dictionary,
-    // safe to add prompt for invalid word together here without additional condition
-    if (!isInDictionary)
+
+    // if word is not in dictionary
+    if (!isInDictionary) {
       Fluttertoast.showToast(
           msg: "Invalid word",
           toastLength: Toast.LENGTH_SHORT,
@@ -242,6 +259,12 @@ class LainGame extends ChangeNotifier {
           backgroundColor: Colors.red,
           textColor: Colors.white,
           fontSize: 16.0);
+      // log invalid word event
+      FirebaseController.logEvent(event: AnalyticsEvents.INVALID_WORD, params: {
+        "difficulty": getGameDifficulty().toLowerCase(),
+        "word_length": currentRandomGameRowLength.toString()
+      });
+    }
 
     return isNotAlreadyPlayed && isInDictionary;
   }
@@ -272,26 +295,7 @@ class LainGame extends ChangeNotifier {
     currentScore = 0;
     playedWords = [];
     currentTick = 0; //0-9 seconds
-    selectIndexedWordMap();
-    generateFirstGameRow();
   }
-
-  /// function for testing game logic with command-line input
-  // static List<String> fillGameArray(List<String> gArray, int gameWordLength) {
-  //   for (int i = 1; i < gameWordLength; i++) {
-  //     Helper.debugPrint(i);
-  //     if (gArray[i] == '') {
-  //       String? userInputLetter = userInput();
-  //       if (userInputLetter != null && userInputLetter.isNotEmpty) {
-  //         gArray[i] = userInputLetter;
-  //         Helper.debugPrint(gArray); // Print gameArray after each modification
-  //       } else {
-  //         i--; // Decrement i to reprocess the same index in case of empty input
-  //       }
-  //     }
-  //   }
-  //   return gArray;
-  // }
 
   // To be called on app start or game start for refreshing of list
   Future<void> populateIndexedWordMap() async {
@@ -302,14 +306,12 @@ class LainGame extends ChangeNotifier {
           (value) => indexedWordMap6LetterDictionary = json.decode(value)),
       rootBundle.loadString("assets/words_dictionary_index_8.json").then(
           (value) => indexedWordMap8LetterDictionary = json.decode(value)),
-    ]).then((value) {
-      selectIndexedWordMap();
-    });
+    ]);
   }
 
   /// EXTENSION condition on maxGameWordLength to select word dictionary
   /// map for improving performance
-  void selectIndexedWordMap() {
+  void selectIndexedWordMapBasedOnDifficulty() {
     switch (maxGameWordLength) {
       case 5:
         indexedWordMapDictionary = indexedWordMap5LetterDictionary;
@@ -335,4 +337,21 @@ class LainGame extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(highScorePrefsKey, highScore);
   }
+
+  /// function for testing game logic with command-line input
+  // static List<String> fillGameArray(List<String> gArray, int gameWordLength) {
+  //   for (int i = 1; i < gameWordLength; i++) {
+  //     Helper.debugPrint(i);
+  //     if (gArray[i] == '') {
+  //       String? userInputLetter = userInput();
+  //       if (userInputLetter != null && userInputLetter.isNotEmpty) {
+  //         gArray[i] = userInputLetter;
+  //         Helper.debugPrint(gArray); // Print gameArray after each modification
+  //       } else {
+  //         i--; // Decrement i to reprocess the same index in case of empty input
+  //       }
+  //     }
+  //   }
+  //   return gArray;
+  // }
 }

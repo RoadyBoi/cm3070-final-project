@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lain/controllers/audio.dart';
 import 'package:lain/controllers/firebase_controller.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FirebaseController.initializeFirebaseApp();
   FirebaseController.initializeFirebaseCrashlytics();
+  FirebaseController.setAnalyticsAppVersion();
 
   runApp(ChangeNotifierProvider(
       lazy: false,
@@ -28,9 +30,12 @@ class _LainAppState extends State<LainApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      await Provider.of<LainGame>(context, listen: false)
-          .populateIndexedWordMap();
+      // await Provider.of<LainGame>(context, listen: false)
+      //     .populateIndexedWordMap();
       await Provider.of<LainGame>(context, listen: false).readHighScore();
+      await AudioController.readMuteStatus();
+    } else {
+      await AudioController.saveMuteStatus();
     }
     super.didChangeAppLifecycleState(state);
   }

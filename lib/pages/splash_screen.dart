@@ -47,14 +47,14 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
                       child: Text(
                         "LAIN",
                         style: Theme.of(context).textTheme.headline1?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            fontSize: width * 0.35,
-                            color: const Color.fromARGB(255, 66, 71, 86),
-                            letterSpacing: width / 80),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 140 * (width / 393),
+                              color: const Color.fromARGB(255, 66, 71, 86),
+                            ),
                       ),
                     ),
                     SizedBox(
-                      height: height * 0.1,
+                      height: height * 0.07,
                     ),
                     CircleLoader(),
                     SizedBox(
