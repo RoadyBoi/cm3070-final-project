@@ -31,7 +31,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       // increment and get current tick
       int nowTick =
           await Provider.of<LainGame>(context, listen: false).incrementTick();
-      // check if game time is up
+      // if game time is up
       if (nowTick > 9) {
         // close existing toasts
         await Fluttertoast.cancel();
@@ -162,7 +162,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                                     fontSize: 22,
                                     color: Color.fromARGB(255, 242, 111, 121),
                                     fontWeight: FontWeight.w800)),
-                        Text("${lainGameState.highScore}",
+                        Text("${lainGameState.getHighScore()}",
                             style: Theme.of(context)
                                 .textTheme
                                 .headline1

@@ -7,14 +7,17 @@ class FinalPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<LainGame>(context, listen: false).saveHighScore();
+    // save high scores when game ends
+    Provider.of<LainGame>(context, listen: false).saveHighScores();
 
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
     return WillPopScope(
+      // redirect to start page if back button is pressed
       onWillPop: () async {
-        return false;
+        Navigator.of(context).pushReplacementNamed("/StartScreen");
+        return true;
       },
       child: Scaffold(
         body: Container(
@@ -54,7 +57,7 @@ class FinalPage extends StatelessWidget {
                             ),
                       ),
                       Text(
-                        "${Provider.of<LainGame>(context, listen: false).highScore}",
+                        "${Provider.of<LainGame>(context, listen: false).getHighScore()}",
                         style: Theme.of(context).textTheme.headline1?.copyWith(
                               fontWeight: FontWeight.w400,
                               fontSize: width * 0.07,

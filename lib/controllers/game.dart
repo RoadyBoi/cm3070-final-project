@@ -9,8 +9,10 @@ import '../constants/helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
-// cache (SharedPrefs) key-value pair for high score
-const String highScorePrefsKey = "LAINHighScorePrefsKey";
+// SharedPrefs keys for high score in app cache
+const String highScoreCasualPrefsKey = "LAINHighScoreCasualPrefsKey",
+    highScoreCompetitivePrefsKey = "LAINHighScoreCompetitivePrefsKey",
+    highScoreComplexPrefsKey = "LAINHighScoreComplexPrefsKey";
 // lowercase letter list
 final List<String> letterList =
     List.generate(26, (index) => String.fromCharCode(index + 97));
@@ -45,14 +47,14 @@ class LainGame extends ChangeNotifier {
   int currentTick = 0; //0-9
   // dictionary filled from json map of words
   Map indexedWordMapDictionary = {};
-  // high score
-  int highScore = 0;
+  // high scores based on game difficulty
+  int highScoreCasual = 0, highScoreCompetitive = 0, highScoreComplex = 0;
 
   LainGame() {
     populateIndexedWordMap().then((_) {
       selectIndexedWordMapBasedOnDifficulty();
     });
-    readHighScore();
+    readHighScores();
   }
 
   // get random letter from letter list for first game row
@@ -113,7 +115,7 @@ class LainGame extends ChangeNotifier {
   // create next active game row
   Future<void> generateNextGameRow(String lastGameWordLetter) async {
     Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
-        "generateNextGameRow",
+        PerformanceCustomTraces.GENERATE_NEXT_GAME_ROW,
         attributes: {'difficulty': getGameDifficulty()});
 
     // remove the top row of the grid
@@ -153,10 +155,38 @@ class LainGame extends ChangeNotifier {
     playedWords.add(playedWord);
   }
 
+  void updateHighScore() {
+    switch (maxGameWordLength) {
+      case 5:
+        if (currentScore > highScoreCasual) highScoreCasual = currentScore;
+        break;
+      case 6:
+        if (currentScore > highScoreCompetitive)
+          highScoreCompetitive = currentScore;
+        break;
+      case 8:
+        if (currentScore > highScoreComplex) highScoreComplex = currentScore;
+        break;
+    }
+  }
+
+  int getHighScore() {
+    switch (maxGameWordLength) {
+      case 5:
+        return highScoreCasual;
+      case 6:
+        return highScoreCompetitive;
+      case 8:
+        return highScoreComplex;
+      default:
+        return 0;
+    }
+  }
+
   // user game input handler
   Future<void> userInput(String keyInput) async {
     Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
-        "userInput",
+        PerformanceCustomTraces.USER_INPUT,
         attributes: {'difficulty': getGameDifficulty()});
     // if input is delete flag ("1"), delete last letter from game row
     if (keyInput == "1") {
@@ -191,11 +221,9 @@ class LainGame extends ChangeNotifier {
         AudioController.playValidWordSound();
         // if valid word, add to score and played words
         currentScore += currentRandomGameRowLength;
-        // if high score beaten, update high score
-        if (currentScore > highScore) {
-          highScore = currentScore;
-        }
         addCurrentValidWordtoPlayedWords();
+        // if high score beaten, update high score
+        updateHighScore();
         // log played word event
         FirebaseController.logEvent(
             event: AnalyticsEvents.WORD_PLAYED,
@@ -218,8 +246,9 @@ class LainGame extends ChangeNotifier {
     // cancel any open toasts
     await Fluttertoast.cancel();
 
+    // start performance custom trace
     Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
-        "validateWord",
+        PerformanceCustomTraces.VALIDATE_WORD,
         attributes: {'difficulty': getGameDifficulty()});
 
     // first letter to be used as index
@@ -271,7 +300,7 @@ class LainGame extends ChangeNotifier {
 
   Future<int> incrementTick() async {
     Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
-        "incrementTick",
+        PerformanceCustomTraces.INCREMENT_TICK,
         attributes: {'difficulty': getGameDifficulty()});
     currentTick += 1;
     // shift currentgamerowpointer up
@@ -326,16 +355,20 @@ class LainGame extends ChangeNotifier {
   }
 
   // read high score from app key-value pair cache (SharedPreferences)
-  Future<void> readHighScore() async {
+  Future<void> readHighScores() async {
     final prefs = await SharedPreferences.getInstance();
-    highScore = prefs.getInt(highScorePrefsKey) ?? 0;
+    highScoreCasual = prefs.getInt(highScoreCasualPrefsKey) ?? 0;
+    highScoreCompetitive = prefs.getInt(highScoreCompetitivePrefsKey) ?? 0;
+    highScoreComplex = prefs.getInt(highScoreComplexPrefsKey) ?? 0;
     notifyListeners();
   }
 
   // save high score to app key-value pair cache (SharedPreferences)
-  Future<void> saveHighScore() async {
+  Future<void> saveHighScores() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(highScorePrefsKey, highScore);
+    await prefs.setInt(highScoreCasualPrefsKey, highScoreCasual);
+    await prefs.setInt(highScoreCompetitivePrefsKey, highScoreCompetitive);
+    await prefs.setInt(highScoreComplexPrefsKey, highScoreComplex);
   }
 
   /// function for testing game logic with command-line input

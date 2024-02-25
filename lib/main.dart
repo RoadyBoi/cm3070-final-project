@@ -32,7 +32,7 @@ class _LainAppState extends State<LainApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // await Provider.of<LainGame>(context, listen: false)
       //     .populateIndexedWordMap();
-      await Provider.of<LainGame>(context, listen: false).readHighScore();
+      await Provider.of<LainGame>(context, listen: false).readHighScores();
       await AudioController.readMuteStatus();
     } else {
       await AudioController.saveMuteStatus();

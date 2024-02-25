@@ -13,6 +13,13 @@ class AnalyticsEvents {
       WORD_PLAYED = "word_played";
 }
 
+class PerformanceCustomTraces {
+  static const String VALIDATE_WORD = 'validateWord',
+      INCREMENT_TICK = "incrementTick",
+      GENERATE_NEXT_GAME_ROW = "generateNextGameRow",
+      USER_INPUT = "userInput";
+}
+
 class FirebaseController {
   static Future<void> initializeFirebaseApp() async {
     await Firebase.initializeApp(
