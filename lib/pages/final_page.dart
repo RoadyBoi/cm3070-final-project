@@ -16,6 +16,7 @@ class FinalPage extends StatelessWidget {
     return WillPopScope(
       // redirect to start page if back button is pressed
       onWillPop: () async {
+        Provider.of<LainGame>(context, listen: false).resetGame();
         Navigator.of(context).pushReplacementNamed("/StartScreen");
         return true;
       },

@@ -2,7 +2,7 @@ name: lain
 description: Word Game
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=2.18.1 <3.0.0"
@@ -63,5 +63,5 @@ flutter_icons:
   ios: true
   adaptive_icon_background: "#ffffffff"
   remove_alpha_ios: true
-  image_path_android: "assets/images/lain_android_launcher.png"
-  image_path_ios: "assets/images/lain_android_launcher.png"
+  image_path_android: "assets/images/lain_android_launcher_500px.png"
+  image_path_ios: "assets/images/lain_android_launcher_500px.png"
