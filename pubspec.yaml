@@ -18,7 +18,8 @@ dependencies:
   # state management
   provider: ^6.0.5
 
-  # controllers
+  # platform
+  package_info_plus: ^5.0.1
   audioplayers: ^5.2.1
   fluttertoast: ^8.2.4
   shared_preferences: ^2.2.2
@@ -28,7 +29,6 @@ dependencies:
   firebase_analytics: ^10.8.6
   firebase_core: ^2.25.4
   firebase_performance: ^0.9.3+14
-  package_info_plus: ^5.0.1
 
 dev_dependencies:
   flutter_test:

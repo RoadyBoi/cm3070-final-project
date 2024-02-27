@@ -21,7 +21,8 @@ class PerformanceCustomTraces {
 }
 
 class FirebaseController {
-  static Future<void> initializeFirebaseApp() async {
+  static Future<void> initializeFirebaseApp(
+      {bool collectionEnabled = true}) async {
     await Firebase.initializeApp(
         name: "Lain",
         options: FirebaseOptions(
@@ -33,9 +34,12 @@ class FirebaseController {
                 : "1:497802509816:android:ad904f05188baec12a6a0d",
             messagingSenderId: "497802509816",
             projectId: "497802509816"));
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
-    await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
-    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(collectionEnabled);
+    await FirebasePerformance.instance
+        .setPerformanceCollectionEnabled(collectionEnabled);
+    await FirebaseAnalytics.instance
+        .setAnalyticsCollectionEnabled(collectionEnabled);
   }
 
   /// Firebase Crashlytics`
