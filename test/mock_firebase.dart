@@ -2,8 +2,11 @@
 // analytics mock code: https://github.com/firebase/flutterfire/blob/master/packages/firebase_analytics/firebase_analytics/test/mock.dart
 // crashlytics mock code: https://github.com/firebase/flutterfire/blob/master/packages/firebase_crashlytics/firebase_crashlytics/test/mock.dart
 
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:firebase_crashlytics_platform_interface/firebase_crashlytics_platform_interface.dart';
 import 'package:firebase_analytics_platform_interface/firebase_analytics_platform_interface.dart';
 

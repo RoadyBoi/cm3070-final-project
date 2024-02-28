@@ -1,22 +1,26 @@
 // from https://github.com/bluefireteam/audioplayers/blob/main/packages/audioplayers/test/fake_audioplayers_platform.dart
 // from https://github.com/flutter/packages/blob/main/packages/path_provider/path_provider/test/path_provider_test.dart
 
-import 'dart:async';
+// ignore_for_file: depend_on_referenced_packages
 
-import 'package:audioplayers_platform_interface/audioplayers_platform_interface.dart';
+// mocking audioplayers package includes mocking path_provider package as well
+// to use the sound effects mp3 files
+
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'package:audioplayers_platform_interface/audioplayers_platform_interface.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-const String kTemporaryPath = 'temporaryPath';
-const String kApplicationSupportPath = 'applicationSupportPath';
-const String kDownloadsPath = 'downloadsPath';
-const String kLibraryPath = 'libraryPath';
-const String kApplicationDocumentsPath = 'applicationDocumentsPath';
-const String kExternalCachePath = 'externalCachePath';
-const String kExternalStoragePath = 'externalStoragePath';
+const String kTemporaryPath = 'temporaryPath',
+    kApplicationSupportPath = 'applicationSupportPath',
+    kDownloadsPath = 'downloadsPath',
+    kLibraryPath = 'libraryPath',
+    kApplicationDocumentsPath = 'applicationDocumentsPath',
+    kExternalCachePath = 'externalCachePath',
+    kExternalStoragePath = 'externalStoragePath';
 
 class FakeCall {
   final String id;

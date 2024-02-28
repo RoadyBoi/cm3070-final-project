@@ -14,6 +14,7 @@ class NavigationErrorPage extends StatelessWidget {
             "Navigation error: routeName = $routeName",
             style: Theme.of(context)
                 .textTheme
+                // ignore: deprecated_member_use
                 .headline1
                 ?.copyWith(color: Colors.black),
             textAlign: TextAlign.center,

@@ -51,10 +51,20 @@ class LainGame extends ChangeNotifier {
   int highScoreCasual = 0, highScoreCompetitive = 0, highScoreComplex = 0;
 
   LainGame() {
-    populateIndexedWordMap().then((_) {
-      selectIndexedWordMapBasedOnDifficulty();
-    });
+    selectIndexedWordMapBasedOnDifficulty();
     readHighScores();
+  }
+
+  // To be called on app start for populating runtime maps of list
+  static Future<void> populateIndexedWordMap() async {
+    await Future.wait([
+      rootBundle.loadString("assets/words_dictionary_index_5.json").then(
+          (value) => indexedWordMap5LetterDictionary = json.decode(value)),
+      rootBundle.loadString("assets/words_dictionary_index_6.json").then(
+          (value) => indexedWordMap6LetterDictionary = json.decode(value)),
+      rootBundle.loadString("assets/words_dictionary_index_8.json").then(
+          (value) => indexedWordMap8LetterDictionary = json.decode(value)),
+    ]);
   }
 
   // get random letter from letter list for first game row
@@ -155,6 +165,7 @@ class LainGame extends ChangeNotifier {
     playedWords.add(playedWord);
   }
 
+  // update high score based on difficulty level
   void updateHighScore() {
     switch (maxGameWordLength) {
       case 5:
@@ -170,6 +181,7 @@ class LainGame extends ChangeNotifier {
     }
   }
 
+  // get high score based on difficulty level
   int getHighScore() {
     switch (maxGameWordLength) {
       case 5:
@@ -324,18 +336,6 @@ class LainGame extends ChangeNotifier {
     currentScore = 0;
     playedWords = [];
     currentTick = 0; //0-9 seconds
-  }
-
-  // To be called on app start or game start for refreshing of list
-  Future<void> populateIndexedWordMap() async {
-    await Future.wait([
-      rootBundle.loadString("assets/words_dictionary_index_5.json").then(
-          (value) => indexedWordMap5LetterDictionary = json.decode(value)),
-      rootBundle.loadString("assets/words_dictionary_index_6.json").then(
-          (value) => indexedWordMap6LetterDictionary = json.decode(value)),
-      rootBundle.loadString("assets/words_dictionary_index_8.json").then(
-          (value) => indexedWordMap8LetterDictionary = json.decode(value)),
-    ]);
   }
 
   /// EXTENSION condition on maxGameWordLength to select word dictionary

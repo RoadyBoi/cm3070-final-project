@@ -10,6 +10,7 @@ import '../route_generator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LainGame.populateIndexedWordMap();
   await FirebaseController.initializeFirebaseApp();
   FirebaseController.initializeFirebaseCrashlytics();
   FirebaseController.setAnalyticsAppVersion();
