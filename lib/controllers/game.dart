@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:lain/controllers/audio.dart';
-import 'package:lain/controllers/firebase_controller.dart';
-import '../constants/helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+
+import '../controllers/audio.dart';
+import '../controllers/firebase_controller.dart';
+import '../controllers/toast_controller.dart';
+import '../constants/helper.dart';
 
 // SharedPrefs keys for high score in app cache
 const String highScoreCasualPrefsKey = "LAINHighScoreCasualPrefsKey",
@@ -124,7 +126,7 @@ class LainGame extends ChangeNotifier {
 
   // create next active game row
   Future<void> generateNextGameRow(String lastGameWordLetter) async {
-    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+    Trace? performanceTrace = await FirebaseController.createAndStartNewTrace(
         PerformanceCustomTraces.GENERATE_NEXT_GAME_ROW,
         attributes: {'difficulty': getGameDifficulty()});
 
@@ -151,7 +153,7 @@ class LainGame extends ChangeNotifier {
     currentTick = 0;
     // send update to UI (Consumers)
     notifyListeners();
-    await performanceTrace.stop();
+    await performanceTrace?.stop();
   }
 
   // flatten the 2d game grid for GridView widget's children
@@ -197,7 +199,7 @@ class LainGame extends ChangeNotifier {
 
   // user game input handler
   Future<void> userInput(String keyInput) async {
-    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+    Trace? performanceTrace = await FirebaseController.createAndStartNewTrace(
         PerformanceCustomTraces.USER_INPUT,
         attributes: {'difficulty': getGameDifficulty()});
     // if input is delete flag ("1"), delete last letter from game row
@@ -251,15 +253,15 @@ class LainGame extends ChangeNotifier {
         AudioController.playInvalidWordSound();
       }
     }
-    await performanceTrace.stop();
+    await performanceTrace?.stop();
   }
 
   Future<bool> validateWord(List<String> wordArray) async {
     // cancel any open toasts
-    await Fluttertoast.cancel();
+    await ToastController.cancel();
 
     // start performance custom trace
-    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+    Trace? performanceTrace = await FirebaseController.createAndStartNewTrace(
         PerformanceCustomTraces.VALIDATE_WORD,
         attributes: {'difficulty': getGameDifficulty()});
 
@@ -277,13 +279,13 @@ class LainGame extends ChangeNotifier {
         indexedWordMapDictionary[firstLetter].contains(currentPlayedWord);
     Helper.debugPrint("isInDictionary: $isInDictionary");
 
-    await performanceTrace.stop();
+    await performanceTrace?.stop();
 
     // show toast prompt if word is already played
     // since word played before is definitely in dictionary,
     // it is safe to add prompt for invalid word together here without additional condition
     if (!isNotAlreadyPlayed)
-      Fluttertoast.showToast(
+      ToastController.showToast(
           msg: "Word played already",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.TOP,
@@ -293,7 +295,7 @@ class LainGame extends ChangeNotifier {
 
     // if word is not in dictionary
     if (!isInDictionary) {
-      Fluttertoast.showToast(
+      ToastController.showToast(
           msg: "Invalid word",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.TOP,
@@ -311,7 +313,7 @@ class LainGame extends ChangeNotifier {
   }
 
   Future<int> incrementTick() async {
-    Trace performanceTrace = await FirebaseController.createAndStartNewTrace(
+    Trace? performanceTrace = await FirebaseController.createAndStartNewTrace(
         PerformanceCustomTraces.INCREMENT_TICK,
         attributes: {'difficulty': getGameDifficulty()});
     currentTick += 1;
@@ -323,7 +325,7 @@ class LainGame extends ChangeNotifier {
     currentGameGrid.add(List.generate(8, (index) => ""));
     // ticker limit logic in UI file
     notifyListeners();
-    await performanceTrace.stop();
+    await performanceTrace?.stop();
     return currentTick;
   }
 

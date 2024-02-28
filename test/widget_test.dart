@@ -40,7 +40,9 @@ void main() async {
   PathProviderPlatform.instance = FakePathProviderPlatform();
 
   // could not mock packages fluttertoast, firebase_performance
-  // related code in LainGame class is commented for tests to run
+  // so the condition Plaform.environment.containsKey('FLUTTER_TESTS')
+  // was used with FirebaseController's methods for firebase peformance
+  // and ToastController's methods for showing and cancelling toasts
 
   setUpAll(() async => await // populate indexed wordmaps
       LainGame.populateIndexedWordMap());
@@ -149,11 +151,9 @@ void main() async {
 
     gameInstance.generateFirstGameRow();
 
-    // fill word
-    Iterable.generate(gameInstance.currentRandomGameRowLength)
-        .forEach((element) async {
+    for (int i = 1; i < gameInstance.currentRandomGameRowLength; i++) {
       await gameInstance.userInput('x');
-    });
+    }
 
     // active pointer should be current random game row length
     expect(gameInstance.currentActiveLetterPositionPointer,
@@ -274,7 +274,7 @@ void main() async {
         .trim();
 
     // simulate tick
-    gameInstance.incrementTick();
+    await gameInstance.incrementTick();
 
     // game row pointer should be game grid's max index - 1
     // last game grid row should be a filler row

@@ -5,10 +5,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:lain/controllers/audio.dart';
-import 'package:lain/controllers/firebase_controller.dart';
 import 'package:provider/provider.dart';
+import '../controllers/audio.dart';
+import '../controllers/firebase_controller.dart';
 import '../controllers/game.dart';
+import '../controllers/toast_controller.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -36,9 +37,9 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       // if game time is up
       if (nowTick > 9) {
         // close existing toasts
-        await Fluttertoast.cancel();
+        await ToastController.cancel();
         // show toast for time up
-        Fluttertoast.showToast(
+        ToastController.showToast(
             msg: "Time up",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.TOP,

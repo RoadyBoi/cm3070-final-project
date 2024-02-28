@@ -55,13 +55,15 @@ class FirebaseController {
   }
 
   /// Firebase Performance Monitoring
-  static Future<Trace> createAndStartNewTrace(String traceName,
+  static Future<Trace?> createAndStartNewTrace(String traceName,
       {Map<String, String>? attributes}) async {
-    Trace customTrace = FirebasePerformance.instance.newTrace(traceName);
-    attributes?.forEach((key, value) => customTrace.putAttribute(key, value));
-    await customTrace.start();
-
-    return customTrace;
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Trace customTrace = FirebasePerformance.instance.newTrace(traceName);
+      attributes?.forEach((key, value) => customTrace.putAttribute(key, value));
+      await customTrace.start();
+      return customTrace;
+    }
+    return null;
   }
 
   /// Firebase Analytics

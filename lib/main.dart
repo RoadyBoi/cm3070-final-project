@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lain/controllers/audio.dart';
-import 'package:lain/controllers/firebase_controller.dart';
 import 'package:provider/provider.dart';
 
+import '../controllers/audio.dart';
+import '../controllers/firebase_controller.dart';
 import '../controllers/game.dart';
 import '../constants/settings.dart';
 import '../constants/theme.dart';
