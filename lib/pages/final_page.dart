@@ -71,6 +71,7 @@ class FinalPage extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
+                  key: Key("rematch_button"),
                   onPressed: () {
                     Provider.of<LainGame>(context, listen: false).resetGame();
                     Navigator.of(context).pushReplacementNamed('/StartScreen');

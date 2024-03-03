@@ -22,7 +22,8 @@ void main() async {
 }
 
 class LainApp extends StatefulWidget {
-  const LainApp({super.key});
+  final String initialRoute;
+  const LainApp({super.key, this.initialRoute = '/SplashScreen'});
   @override
   State<LainApp> createState() => _LainAppState();
 }
@@ -48,7 +49,7 @@ class _LainAppState extends State<LainApp> with WidgetsBindingObserver {
       navigatorKey: Settings.navigatorKey,
       scaffoldMessengerKey: Settings.scaffoldMessengerKey,
       onGenerateRoute: RouteGenerator.onGenerateRoute,
-      initialRoute: "/SplashScreen",
+      initialRoute: widget.initialRoute,
       theme: LainAppTheme.baseTheme,
       debugShowCheckedModeBanner: false,
     );

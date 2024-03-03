@@ -125,6 +125,7 @@ class _HomePageState extends State<HomePage> {
                   height: 20 * (height / 852),
                 ),
                 ElevatedButton(
+                  key: Key("start_game_button"),
                   onPressed: () {
                     Provider.of<LainGame>(context, listen: false)
                         .generateFirstGameRow();

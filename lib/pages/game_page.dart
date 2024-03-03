@@ -99,6 +99,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       );
 
   Widget keyboardCard(String letter) => GestureDetector(
+      key: Key(letter),
       onTap: () async {
         await Provider.of<LainGame>(context, listen: false).userInput(letter);
         HapticFeedback.lightImpact();

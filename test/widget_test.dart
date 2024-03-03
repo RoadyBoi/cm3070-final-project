@@ -1,21 +1,20 @@
-// ignore_for_file: depend_on_referenced_packages
-
-import 'dart:async';
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:lain/controllers/game.dart';
+import 'package:lain/main.dart';
+import 'package:lain/route_generator.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'mock_firebase.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 
-import 'mock_audio.dart';
-import 'package:audioplayers_platform_interface/audioplayers_platform_interface.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+// using 'flutter run -d [emulator-id] test/widget_test.dart' to run the tests in an emulator
 
 void main() async {
-  // Ensure widgets binding is initialized before mocking packages
+// Ensure widgets binding is initialized before mocking packages
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // setup mock firebase app environment
@@ -34,293 +33,261 @@ void main() async {
     highScoreComplexPrefsKey: 0,
   });
 
-  // set mock audio players platform instance
-  // to mock audio players, path_provider has to be mocked as well
-  AudioplayersPlatformInterface.instance = FakeAudioplayersPlatform();
-  PathProviderPlatform.instance = FakePathProviderPlatform();
-
-  // could not mock packages fluttertoast, firebase_performance
-  // so the condition Plaform.environment.containsKey('FLUTTER_TESTS')
-  // was used with FirebaseController's methods for firebase peformance
-  // and ToastController's methods for showing and cancelling toasts
+  // no need to mock audioplayers, fluttertoast, path_provider for widget tests
+  // as they are run on emulator and will support these packages in the runtime
 
   setUpAll(() async => await // populate indexed wordmaps
       LainGame.populateIndexedWordMap());
 
-  // check populated word maps
-  test('Test populating the runtime word maps', () async {
-    // 26 letters in the alphabet hence 26 keys in all maps
-    expect(indexedWordMap5LetterDictionary.keys.length, 26);
-    expect(indexedWordMap6LetterDictionary.keys.length, 26);
-    expect(indexedWordMap8LetterDictionary.keys.length, 26);
+  WidgetTests.testSplash();
+  WidgetTests.testPlayButton();
+  WidgetTests.testPlayAgainButton();
+  WidgetTests.testKeyboardInput();
+  WidgetTests.testInvalidWord();
+  WidgetTests.testValidWord();
+  WidgetTests.testGameEndUI();
+}
 
-    // all words must be strings in the value of the map entry
-    expect(indexedWordMap5LetterDictionary.entries.first.value,
-        everyElement(isA<String>()));
-  });
+class WidgetTests {
+  static void testSplash() {
+    testWidgets('Test splash screen navigates to home page after 3 seconds',
+        (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-  test('Test flattening of game grid', () {
-    LainGame gameInstance = LainGame();
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false, create: (context) => LainGame(), child: LainApp()));
+      // this renders frames on the same page for 3 seconds
+      await widgetTester.pump(Duration(seconds: 3));
+      // after 3 seconds splash screen should navigate to home screen
+      // additional 300 milliseconds allowed for frame rendering
+      expect(RouteGenerator.currentRoute.value, "/StartScreen");
+    }, tags: ['splash']);
+  }
 
-    // gameInstance.currentgamegrid.length is the number of rows
-    // gameInstance.currentGamegrid.first.length is the number of columns
-    // flattened list must be rows x columns
-    expect(
-        gameInstance.flattenedGameGrid(),
-        hasLength(gameInstance.currentGameGrid.length *
-            gameInstance.currentGameGrid.first.length));
-  });
+  // limita
+  static void testPlayButton() {
+    testWidgets('Test play button navigating to game page',
+        (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-  // test getFirstLetter()
-  test('Test create first letter', () {
-    LainGame gameInstance = LainGame();
+      // render home page with LainGame provider
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => LainGame(),
+          child: LainApp(
+            initialRoute: "/StartScreen",
+          )));
 
-    expect(gameInstance.getFirstLetter(), isIn(letterList));
-  });
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("start_game_button")));
 
-  // test generateFirstGameRow()
-  test('Test generate first game row', () {
-    LainGame gameInstance = LainGame();
+      // the game page should be on screen now
+      expect(RouteGenerator.currentRoute.value, "/GameRoomScreen");
+    }, tags: ['playButton']);
+  }
 
-    gameInstance.generateFirstGameRow();
+  static void testPlayAgainButton() {
+    testWidgets('Test game replay from final screen', (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-    // game row should contain spaces, empty strings and lowercase letter
-    if (gameInstance.currentRandomGameRowLength < 8) {
-      expect(gameInstance.currentGameGrid[gameInstance.currentGameRowPointer],
-          contains(""));
-    }
-    expect(gameInstance.currentGameGrid[gameInstance.currentGameRowPointer],
-        contains(" "));
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer].first,
-        isIn(letterList));
-  });
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => LainGame(),
+          child: LainApp(
+            initialRoute: '/FinalPageScreen',
+          )));
 
-  // test calculateRandomGameRowLength
-  test('Test new random game row length calculation', () {
-    LainGame gameInstance = LainGame();
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("rematch_button")));
 
-    gameInstance.calculateRandomGameRowLength();
+      // start screen should be the current route
+      expect(RouteGenerator.currentRoute.value, "/StartScreen");
+    }, tags: ['rematch']);
+  }
 
-    // current game row length should be 3 - maxGameWordLength
-    expect(
-        gameInstance.currentRandomGameRowLength,
-        allOf(isNotNull, greaterThanOrEqualTo(3),
-            lessThanOrEqualTo(gameInstance.maxGameWordLength)));
-  });
+  static void testKeyboardInput() {
+    testWidgets('Test keyboard input on game page', (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-  // test userInput with a single letter input on new row
-  test("Test single letter input handle", () async {
-    LainGame gameInstance = LainGame();
+      LainGame gameInstance = LainGame();
 
-    gameInstance.generateFirstGameRow();
-    await gameInstance.userInput("e");
+      // render home page with LainGame provider
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => gameInstance,
+          child: LainApp(
+            initialRoute: "/StartScreen",
+          )));
 
-    // game row must have 2 letters
-    // and acive pointer should be at 2
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]
-          ..removeWhere((element) => element == "")
-          ..removeWhere((element) => element == " "),
-        hasLength(2));
-    expect(gameInstance.currentActiveLetterPositionPointer, 2);
-  });
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("start_game_button")));
 
-  // test delete 2nd letter on game row
-  test('Test delete letter input handle', () async {
-    LainGame gameInstance = LainGame();
+      // wait for the game page frame to render and widgets to be initialized
+      await widgetTester.pump(Duration(milliseconds: 500));
 
-    gameInstance.generateFirstGameRow();
-    await gameInstance.userInput('e');
-    // delete input
-    await gameInstance.userInput('1');
+      // tap the keyboard key for test input
+      await widgetTester.tap(find.byKey(Key("q")));
 
-    // game row should have one letter remaining
-    // and active pointer should be 1
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]
-          ..removeWhere((element) => element == "")
-          ..removeWhere((element) => element == " "),
-        hasLength(1));
-    expect(gameInstance.currentActiveLetterPositionPointer, 1);
-  });
+      // allow the changenotifier to update state
+      await widgetTester.pump(Duration(seconds: 1));
 
-  // test delete last letter
-  test('Test delete last letter handle', () async {
-    LainGame gameInstance = LainGame();
+      // the test button was the letter q, the current game row's second letter should be q
+      expect(
+          gameInstance.currentGameGrid[gameInstance.currentGameRowPointer][1],
+          "q");
+    }, tags: ["keyboard"]);
+  }
 
-    gameInstance.generateFirstGameRow();
+  static void testInvalidWord() {
+    testWidgets("Test invalid word entry", (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-    for (int i = 1; i < gameInstance.currentRandomGameRowLength; i++) {
-      await gameInstance.userInput('x');
-    }
+      LainGame gameInstance = LainGame();
 
-    // active pointer should be current random game row length
-    expect(gameInstance.currentActiveLetterPositionPointer,
-        gameInstance.currentRandomGameRowLength);
+      // render home page with LainGame provider
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => gameInstance,
+          child: LainApp(
+            initialRoute: "/StartScreen",
+          )));
 
-    // delete operation
-    await gameInstance.userInput("1");
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("start_game_button")));
 
-    // active pointer should be random game row length - 1
-    // element at active pointer should be space character
-    expect(gameInstance.currentActiveLetterPositionPointer,
-        gameInstance.currentRandomGameRowLength - 1);
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]
-            [gameInstance.currentActiveLetterPositionPointer],
-        " ");
-  });
+      // wait for the game page frame to render and widgets to be initialized
+      await widgetTester.pump(Duration(milliseconds: 200));
 
-  // test filling invalid word
-  test('Test filling invalid word', () async {
-    LainGame gameInstance = LainGame();
+      for (int i = 1; i < gameInstance.currentRandomGameRowLength; i++) {
+        // tap the 'x' key to input invalid word
+        await widgetTester.tap(find.byKey(Key("z")));
+        // allow the changenotifier to update state
+        await widgetTester.pump(Duration(seconds: 1));
+      }
 
-    gameInstance.generateFirstGameRow();
+      // the invalid word was made by inputting the letter x for word length
+      // validateword should return false for the current word
+      // playedWords should not contain current word
+      expect(
+          await gameInstance.validateWord(
+              gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]),
+          false);
+      expect(
+          gameInstance.playedWords,
+          isNot(contains(gameInstance
+              .currentGameGrid[gameInstance.currentGameRowPointer]
+              .join('')
+              .trim()
+              .toLowerCase())));
+    }, tags: ["invalid_word"]);
+  }
 
-    // fill word
-    for (int i = 1; i < gameInstance.currentRandomGameRowLength; i++) {
-      await gameInstance.userInput('x');
-    }
+  static void testValidWord() {
+    testWidgets('Test valid word entry', (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-    // validate word should return false when current game row is filled
-    // and played words list should be empty
-    expect(
-        await gameInstance.validateWord(
-            gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]),
-        false);
-    expect(gameInstance.playedWords.length, 0);
-  });
+      LainGame gameInstance = LainGame();
 
-  // test filling valid word
-  test('Test filling valid word', () async {
-    LainGame gameInstance = LainGame();
+      // render home page with LainGame provider
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => gameInstance,
+          child: LainApp(
+            initialRoute: "/StartScreen",
+          )));
 
-    // generate first game row and store the first letter
-    gameInstance.generateFirstGameRow();
-    String currentFirstWord =
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer].first;
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("start_game_button")));
 
-    // store first game row length
-    int initialGameRowLength = gameInstance.currentRandomGameRowLength;
+      // wait for the game page frame to render and widgets to be initialized
+      await widgetTester.pump(Duration(milliseconds: 500));
 
-    // find a valid word's letters from word dictionary
-    List<String> validWordLetters =
-        indexedWordMap8LetterDictionary[currentFirstWord]
-            .firstWhere((element) =>
-                element.length == gameInstance.currentRandomGameRowLength)
-            .split('');
-    validWordLetters.removeAt(0);
+      // store current first word
+      String currentFirstWord = gameInstance
+          .currentGameGrid[gameInstance.currentGameRowPointer].first;
 
-    // fill the valid word to the current game row
-    for (String letter in validWordLetters) {
-      await gameInstance.userInput(letter);
-    }
+      // store first game row length
+      int initialGameRowLength = gameInstance.currentRandomGameRowLength;
 
-    // the game row should move up the grid (index -= 1)
-    // validateWord(played word game row) should return false (already played word)
-    // playedwords should contain the valid word
-    // the new row should be a game row
-    // the new row should start with last letter of the played word
-    // current active letter position pointer should be 1 (since first letter at 0)
-    // current score should include the played word length
-    // current high score should include the played word length (when high score is 0)
-    expect(gameInstance.currentGameRowPointer,
-        gameInstance.currentGameGrid.length - 1);
-    expect(
-        await gameInstance.validateWord(gameInstance
-            .currentGameGrid[gameInstance.currentGameRowPointer - 1]),
-        false);
-    expect(
-        gameInstance.playedWords,
-        contains(gameInstance
-            .currentGameGrid[gameInstance.currentGameRowPointer - 1]
-            .join('')
-            .trim()));
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer].first,
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer - 1]
-            [initialGameRowLength - 1]);
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer],
-        anyOf(
-            containsAll([
-              ' ',
-              gameInstance
-                  .currentGameGrid[gameInstance.currentGameRowPointer].first,
-              ''
-            ]),
-            containsAll([
-              ' ',
-              gameInstance
-                  .currentGameGrid[gameInstance.currentGameRowPointer].first
-            ])));
-    expect(gameInstance.currentActiveLetterPositionPointer, 1);
-    expect(gameInstance.currentScore, initialGameRowLength);
-    expect(gameInstance.getHighScore(), initialGameRowLength);
-  });
+      // find a valid word's letters from word dictionary
+      List<String> validWordLetters =
+          indexedWordMap8LetterDictionary[currentFirstWord]
+              .firstWhere((element) =>
+                  element.length == gameInstance.currentRandomGameRowLength)
+              .split('');
+      validWordLetters.removeAt(0);
 
-  test('Test ticking', () async {
-    LainGame gameInstance = LainGame();
+      // fill the valid word to the current game row
+      for (String letter in validWordLetters) {
+        // tap the keyboard key for test input
+        await widgetTester.tap(find.byKey(Key(letter)));
+        await widgetTester.pump(Duration(milliseconds: 100));
+      }
 
-    gameInstance.generateFirstGameRow();
+      // allow all state changes from letter inputs to complete
+      await widgetTester.pump(Duration(milliseconds: 400));
 
-    // input a letter
-    await gameInstance.userInput('x');
+      // playedwords should contain the valid word
+      // the new row should be a game row
+      // the new row should start with last letter of the played word
+      // current active letter position pointer should be 1 (since first letter at 0)
+      // current score should include the played word length
+      // current high score should include the played word length (when high score is 0)
+      expect(gameInstance.playedWords, isNotEmpty);
+      expect(
+          await gameInstance
+              .validateWord(gameInstance.playedWords.first.split('')),
+          false);
+      expect(
+          gameInstance
+              .currentGameGrid[gameInstance.currentGameRowPointer].first,
+          gameInstance
+              .playedWords.first[gameInstance.playedWords.first.length - 1]);
+      expect(
+          gameInstance.currentGameGrid[gameInstance.currentGameRowPointer],
+          anyOf(
+              containsAll([
+                ' ',
+                gameInstance
+                    .currentGameGrid[gameInstance.currentGameRowPointer].first,
+                ''
+              ]),
+              containsAll([
+                ' ',
+                gameInstance
+                    .currentGameGrid[gameInstance.currentGameRowPointer].first
+              ])));
+      expect(gameInstance.currentActiveLetterPositionPointer, 1);
+      expect(gameInstance.currentScore, initialGameRowLength);
+      expect(gameInstance.getHighScore(), initialGameRowLength);
+    }, tags: ["valid_word"]);
+  }
 
-    String currentGameWordBeforeTick = gameInstance
-        .currentGameGrid[gameInstance.currentGameRowPointer]
-        .join('')
-        .trim();
+  static void testGameEndUI() {
+    testWidgets('Test game end UI', (widgetTester) async {
+      await widgetTester.binding.setSurfaceSize(Size(400, 900));
 
-    // simulate tick
-    await gameInstance.incrementTick();
+      LainGame gameInstance = LainGame();
 
-    // game row pointer should be game grid's max index - 1
-    // last game grid row should be a filler row
-    // game grid moved up should have the input carried as well
-    expect(gameInstance.currentGameRowPointer,
-        gameInstance.currentGameGrid.length - 2);
-    expect(gameInstance.currentGameGrid.last, everyElement(""));
-    expect(
-        gameInstance.currentGameGrid[gameInstance.currentGameRowPointer]
-            .join('')
-            .trim(),
-        currentGameWordBeforeTick);
-  });
+      // render home page with LainGame provider
+      await widgetTester.pumpWidget(ChangeNotifierProvider(
+          lazy: false,
+          create: (context) => gameInstance,
+          child: LainApp(
+            initialRoute: "/StartScreen",
+          )));
 
-  test('Test game over state (tick 0-9)', () async {
-    LainGame gameInstance = LainGame();
+      // tap the elevated button to start the game and navigate to game page
+      await widgetTester.tap(find.byKey(Key("start_game_button")));
 
-    gameInstance.generateFirstGameRow();
+      // wait for the game page frame to render and widgets to be initialized
+      await widgetTester.pump(Duration(milliseconds: 500));
 
-    // tick 10 times
-    for (int i = 0; i < 10; i++) {
-      await gameInstance.incrementTick();
-    }
+      // wait 10 seconds (0-9) tick for game to end
+      await widgetTester.pump(Duration(seconds: 10));
 
-    // game grid should have all filler rows
-    // game row pointer should be -1
-    expect(gameInstance.currentGameGrid,
-        everyElement(allOf(hasLength(8), everyElement(""))));
-    expect(gameInstance.currentGameRowPointer, -1);
-  });
-
-  test('Test ticker periodic timer for UI', () async {
-    LainGame gameInstance = LainGame();
-
-    Timer? tickTimer;
-
-    // Periodic timer ticker
-    tickTimer = Timer.periodic(Duration(seconds: 1), (thisTimer) async {
-      int nowTick = await gameInstance.incrementTick();
-      if (nowTick > 9) thisTimer.cancel();
-    });
-
-    // after 10 seconds, the periodic timer must cancel for UI to relect game end
-    // 50ms delay to allow updating of timer active status after timer is cancelled
-    await Future.delayed(Duration(milliseconds: 10050), () {
-      expect(tickTimer!.isActive, false);
-    });
-  });
+      // final screen should be the current route after game end
+      expect(RouteGenerator.currentRoute.value, "/FinalPageScreen");
+    }, tags: ["game_end"]);
+  }
 }
