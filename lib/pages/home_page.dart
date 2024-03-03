@@ -15,6 +15,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _difficultyRadioValue = 5; //5,6,8
+  final List<String> rulesTextLines = [
+    'The game begins with a random letter appearing in a green box followed by additional green boxes on the grid representing the number of letters in the word.',
+    'The user must then guess a word that begins with the random letter and that also fulfills the letter count upon entering a correct word.',
+    'The last letter subsequently becomes the first letter for the next iteration.',
+    'The number of letters to guess also varies with every iteration.',
+    'The game signals diminishing time by gradually sliding up the green box or the word up the grid from the bottom like this.',
+    'When it reaches the top, the guessing time is over, the duration varies based on the number of letters in the word.'
+  ];
 
   @override
   void initState() {
@@ -169,5 +177,78 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void tutorialPressed() {}
+  void tutorialPressed() async {
+    await showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            insetPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 70),
+            backgroundColor: Color(0xfffcbcbb),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            child: Column(
+              children: [
+                Flexible(
+                  flex: 1,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Icon(
+                            Icons.arrow_back_ios_rounded,
+                            color: Color(0xfffceaea),
+                            size:
+                                30 * (MediaQuery.of(context).size.width / 428),
+                          ),
+                        ),
+                        Text(
+                          "  RULES",
+                          style: TextStyle(
+                              color: Color(0xfff26f79),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 30 *
+                                  (MediaQuery.of(context).size.width / 428)),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                Flexible(
+                  flex: 5,
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    thickness: 6,
+                    radius: Radius.circular(16),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                      itemBuilder: (context, index) => ListTile(
+                        horizontalTitleGap: 5,
+                        titleAlignment: ListTileTitleAlignment.titleHeight,
+                        leading: Icon(
+                          Icons.cloud,
+                          color: Color(0xfffceaea),
+                          size: 21 * (MediaQuery.of(context).size.width / 428),
+                        ),
+                        title: Text(rulesTextLines[index],
+                            style: TextStyle(
+                                color: Color(0xfff26f79),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18 *
+                                    (MediaQuery.of(context).size.width / 428))),
+                      ),
+                      itemCount: rulesTextLines.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+  }
 }
